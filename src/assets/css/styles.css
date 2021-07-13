@@ -1,0 +1,91 @@
+* {
+  margin: 0px;
+  padding: 0px;
+  outline: 0px;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body,
+input,
+button,
+select {
+  font-family: Open Sans, sans-serif;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  color: white;
+  background-color: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: url(../image/background.png) 0% 0% / cover fixed, rgb(11, 10, 13);
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 7.5px;
+  height: 100%;
+}
+
+div.row {
+  flex: 1;
+  display: flex;
+  max-height: 50%;
+}
+
+button {
+  cursor: pointer;
+  height: 40px;
+  background: #d92600;
+  font-weight: bold;
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background 0.2s;
+  padding: 10px;
+}
+button:hover {
+  filter: brightness(90%);
+}
+
+button.btn-success {
+  background: #4cd900;
+}
+button.btn-success:hover {
+  filter: brightness(90%);
+}
+
+label {
+  font-weight: 600;
+}
+
+span {
+  color: #44434b;
+  font-size: 12px;
+  align-self: center;
+}
+
+.boxLogs {
+  flex: 1;
+  background: rgb(25, 24, 31);
+  margin-top: 10px;
+  overflow: auto;
+}
+
+ul {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow: auto;
+}
