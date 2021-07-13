@@ -6,16 +6,16 @@ const {
   Menu,
   dialog,
   screen,
-  // Notification,
+  Notification,
   ipcMain,
 } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
 
-// const Database = require("./database");
+const Database = require("./database");
 
 const { checkArguments } = require("./functions");
-// const StartService = require("./services/StartService");
+const StartService = require("./services/StartService");
 
 const global_config = {
   tray: null,
@@ -106,7 +106,7 @@ function createWindow() {
   global_config.window.loadFile(path.join(__dirname, "common", "index.html"));
 }
 
-/* async function startService() {
+async function startService() {
   try {
     global_config.db = await new Database().getConnection();
 
@@ -148,24 +148,20 @@ function createWindow() {
 
     setTimeout(() => startService(), 60000);
   }
-} */
+}
 
 function automaticCheckForUpdates() {
   try {
     autoUpdater.checkForUpdatesAndNotify();
   } catch (err) {
-    dialog
-      .showMessageBox({
-        type: "error",
-        title: "Erro na atualização",
-        message: err.message,
-      })
-      .then(() => {
-        app.isQuiting = true;
-        if (process.platform !== "darwin") app.quit();
-      });
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro serviço atualização(app): ${
+        err.message
+      }`,
+      type: "generals",
+    });
   } finally {
-    setTimeout(() => automaticCheckForUpdates(), 3600000);
+    setTimeout(() => automaticCheckForUpdates(), 1800000);
   }
 }
 
@@ -189,9 +185,9 @@ app.whenReady().then(() => {
 
       createWindow();
 
-      // startService();
-
       automaticCheckForUpdates();
+
+      startService();
 
       app.on("activate", function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();

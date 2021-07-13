@@ -24,7 +24,7 @@ class OrdersService {
         tokens.map((token) => {
           return Promise.all([
             this.manageOrders(token),
-            // this.updateStatusOrders(token),
+            this.updateStatusOrders(token),
           ]);
         })
       );
