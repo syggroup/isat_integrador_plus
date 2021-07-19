@@ -1,15 +1,15 @@
 const moment = require("moment");
 
 const Dados = require("../controllers/Dados");
-const veículos = require("../controllers/Veiculos");
+const Veiculos = require("../controllers/Veiculos");
 
 const api = require("../services/api");
 
-class veículosService {
+class VehiclesService {
   constructor(window, db) {
     this.dados = new Dados(db);
 
-    this.veiculos = new veículos(db);
+    this.veiculos = new Veiculos(db);
 
     this.window = window;
   }
@@ -109,4 +109,4 @@ class veículosService {
   }
 }
 
-module.exports = veículosService;
+module.exports = VehiclesService;

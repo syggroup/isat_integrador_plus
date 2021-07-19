@@ -3,7 +3,7 @@ const moment = require("moment");
 const Dados = require("../controllers/Dados");
 const Parametros = require("../controllers/Parametros");
 const ReferencesService = require("./ReferencesService");
-const VeiculosService = require("./VehiclesService");
+const VehiclesService = require("./VehiclesService");
 const OrdersService = require("./OrdersService");
 
 class StartService {
@@ -12,7 +12,7 @@ class StartService {
     this.parametros = new Parametros(db);
 
     this.referencesService = new ReferencesService(window, db);
-    this.veiculosService = new VeiculosService(window, db);
+    this.vehiclesService = new VehiclesService(window, db);
     this.ordersService = new OrdersService(window, db);
 
     this.tokens = [];
@@ -43,7 +43,7 @@ class StartService {
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
 
-          await this.veiculosService.execute({ tokens: this.tokens });
+          await this.vehiclesService.execute({ tokens: this.tokens });
 
           await this.referencesService.execute({ tokens: this.tokens });
 
@@ -75,6 +75,33 @@ class StartService {
     }
 
     setTimeout(() => this.start(), 60000);
+  }
+
+  async verificaIntegracaoIsat() {
+    try {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Verifica integração iSat iniciado`
+      );
+
+      const idempresa = await this.dados.getNomeGeral();
+
+      if (idempresa && idempresa.replace(/\D/g) % 1 === 0) {
+      } else {
+        this.writeLog(
+          `(${new Date().toLocaleString()}) - Idempresa inválido: (${idempresa})`
+        );
+      }
+
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Verifica integração iSat finalizado`
+      );
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Erro verifica integração iSat: ${
+          err.message
+        }`
+      );
+    }
   }
 
   async forcaAtualizacao() {

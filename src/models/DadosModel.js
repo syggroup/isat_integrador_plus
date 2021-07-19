@@ -5,7 +5,9 @@ class DadosModel {
 
   async get() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
-    const result = await this.db.query("SELECT gps_aberto, filiais FROM dados");
+    const result = await this.db.query(
+      "SELECT gps_aberto, filiais, nomegeral FROM dados"
+    );
     return result[1].rows;
   }
 

@@ -23,6 +23,7 @@ const global_config = {
   icon: null,
   iconpath: path.join(__dirname, "assets", "image", "logo.png"),
   db: null,
+  verifica_integracao_isat: false,
 };
 
 function createIconAndTray() {
@@ -49,9 +50,11 @@ function createIconAndTray() {
         label: "Fechar",
         type: "normal",
         click: async () => {
-          if (global_config.db) {
-            await global_config.db.close();
-          }
+          try {
+            if (global_config.db) {
+              await global_config.db.close();
+            }
+          } catch (err) {}
 
           app.isQuiting = true;
           if (process.platform !== "darwin") app.quit();
@@ -106,23 +109,40 @@ function createWindow() {
   global_config.window.loadFile(path.join(__dirname, "common", "index.html"));
 }
 
-async function startService() {
+async function setGlobalConnectionDatabase() {
   try {
     global_config.db = await new Database().getConnection();
+    return true;
+  } catch (err) {
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro conexão banco de dados: ${
+        err.message
+      }`,
+      type: "generals",
+    });
+    return false;
+  }
+}
 
-    // new StartService(global_config.window, db).getNomeGeral();
-    new StartService(global_config.window, global_config.db).start();
+function verifyIntegrationIsat() {
+  if (!global_config.verifica_integracao_isat) {
+    global_config.verifica_integracao_isat = true;
 
-    (async () => {
-      while (
-        !(await new StartService(
-          global_config.window,
-          global_config.db
-        ).forcaAtualizacao())
-      ) {
-        await new Promise((resolve) => setTimeout(resolve, 15000));
-      }
+    new StartService(
+      global_config.window,
+      global_config.db
+    ).verificaIntegracaoIsat();
+  }
+}
 
+async function verifySagiUpdate() {
+  try {
+    const check = await new StartService(
+      global_config.window,
+      global_config.db
+    ).forcaAtualizacao();
+
+    if (check) {
       new Notification({
         icon: global_config.iconpath,
         title: "Aviso",
@@ -133,7 +153,42 @@ async function startService() {
 
       app.isQuiting = true;
       if (process.platform !== "darwin") app.quit();
-    })();
+    }
+  } catch (err) {
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro verifica forca atualização: ${
+        err.message
+      }`,
+      type: "generals",
+    });
+  } finally {
+    setTimeout(() => verifySagiUpdate(), 15000);
+  }
+}
+
+function runAllServices() {
+  try {
+    //new StartService(global_config.window, db).getNomeGeral();
+    new StartService(global_config.window, global_config.db).start();
+  } catch (err) {
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro serviço geral: ${
+        err.message
+      }`,
+      type: "generals",
+    });
+  }
+}
+
+async function startService() {
+  try {
+    if (await setGlobalConnectionDatabase()) {
+      verifyIntegrationIsat();
+
+      runAllServices();
+
+      verifySagiUpdate();
+    }
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro serviço geral: ${
@@ -142,9 +197,11 @@ async function startService() {
       type: "generals",
     });
 
-    if (global_config.db) {
-      await global_config.db.close();
-    }
+    try {
+      if (global_config.db) {
+        await global_config.db.close();
+      }
+    } catch (err) {}
 
     setTimeout(() => startService(), 60000);
   }
@@ -208,6 +265,7 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", function () {
+  app.isQuiting = true;
   if (process.platform !== "darwin") app.quit();
 });
 
