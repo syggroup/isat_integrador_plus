@@ -124,11 +124,11 @@ async function setGlobalConnectionDatabase() {
   }
 }
 
-function verifyIntegrationIsat() {
+async function verifyIntegrationIsat() {
   if (!global_config.verifica_integracao_isat) {
     global_config.verifica_integracao_isat = true;
 
-    new StartService(
+    await new StartService(
       global_config.window,
       global_config.db
     ).verificaIntegracaoIsat();
@@ -183,7 +183,7 @@ function runAllServices() {
 async function startService() {
   try {
     if (await setGlobalConnectionDatabase()) {
-      verifyIntegrationIsat();
+      await verifyIntegrationIsat();
 
       runAllServices();
 

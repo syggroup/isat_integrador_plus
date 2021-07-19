@@ -6,6 +6,8 @@ const ReferencesService = require("./ReferencesService");
 const VehiclesService = require("./VehiclesService");
 const OrdersService = require("./OrdersService");
 
+const api = require("../services/api");
+
 class StartService {
   constructor(window, db) {
     this.dados = new Dados(db);
@@ -86,6 +88,42 @@ class StartService {
       const idempresa = await this.dados.getNomeGeral();
 
       if (idempresa && idempresa.replace(/\D/g) % 1 === 0) {
+        const response = await api
+          .get(`/v2/bd9e6bc2c760d35bd8a70c818cece692/cliente/${idempresa}`)
+          .catch((err) =>
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro requisição Api Isat integração: ${
+                err.response
+                  ? `${err.response.status} - ${JSON.stringify(
+                      err.response.data
+                    )}`
+                  : err.message
+              }`
+            )
+          );
+
+        if (response) {
+          const registros = response.data;
+
+          const concat_retornos = [];
+
+          await Promise.all(
+            registros.map(async ({ filial, token }) => {
+              await this.parametros.setToken({
+                filial,
+                token,
+              });
+
+              concat_retornos.push(`${filial}:${token}`);
+            })
+          );
+
+          this.writeLog(
+            `(${new Date().toLocaleString()}) - Integração = ${concat_retornos.join(
+              ", "
+            )}`
+          );
+        }
       } else {
         this.writeLog(
           `(${new Date().toLocaleString()}) - Idempresa inválido: (${idempresa})`
@@ -101,6 +139,8 @@ class StartService {
           err.message
         }`
       );
+    } finally {
+      return true;
     }
   }
 

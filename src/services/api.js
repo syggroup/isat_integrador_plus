@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 const api = axios.create({
-  baseURL: "https://isat.sagisolutions.com/api",
+  baseURL: "http://localhost/sagisolutions/trunk/api",
 });
 
 module.exports = api;

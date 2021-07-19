@@ -66,6 +66,39 @@ class ParametrosModel {
 
     return result[1].rows;
   }
+
+  async setToken({ filial, token }) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    const result = await this.db.query(`
+      SELECT
+        (
+          SELECT parametro_valor
+          FROM sagi_parametros
+          WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = '${filial}'
+        ) as usa,
+        (
+          SELECT parametro_valor
+          FROM sagi_parametros
+          WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = '${filial}'
+        ) as token
+    `);
+
+    if (!result[1].rows[0].token) {
+      await this.db.query(`
+        UPDATE sagi_parametros
+        SET parametro_valor = '.T.'
+        WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = '${filial}'
+      `);
+    }
+
+    await this.db.query(`
+      UPDATE sagi_parametros
+      SET parametro_valor = '${token}'
+      WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = '${filial}'
+    `);
+
+    return;
+  }
 }
 
 module.exports = ParametrosModel;

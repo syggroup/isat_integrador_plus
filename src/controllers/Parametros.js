@@ -21,6 +21,10 @@ class Parametros {
 
     return tokens_ok;
   }
+
+  setToken(data) {
+    return this.parametros_model.setToken(data);
+  }
 }
 
 module.exports = Parametros;
