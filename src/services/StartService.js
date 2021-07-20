@@ -109,12 +109,18 @@ class StartService {
 
           await Promise.all(
             registros.map(async ({ filial, token }) => {
-              await this.parametros.setToken({
-                filial,
-                token,
-              });
+              if (filial) {
+                await this.parametros.setToken({
+                  filial,
+                  token,
+                });
 
-              concat_retornos.push(`${filial}:${token}`);
+                concat_retornos.push(`${filial}:${token}`);
+              } else {
+                concat_retornos.push(
+                  `Token sem filial definida no iSat:${token}`
+                );
+              }
             })
           );
 
