@@ -124,7 +124,7 @@ async function setGlobalConnectionDatabase() {
   }
 }
 
-async function verifyIntegrationIsat() {
+/* async function verifyIntegrationIsat() {
   if (!global_config.verifica_integracao_isat) {
     global_config.verifica_integracao_isat = true;
 
@@ -133,7 +133,7 @@ async function verifyIntegrationIsat() {
       global_config.db
     ).verificaIntegracaoIsat();
   }
-}
+} */
 
 async function verifySagiUpdate() {
   try {
@@ -183,7 +183,7 @@ function runAllServices() {
 async function startService() {
   try {
     if (await setGlobalConnectionDatabase()) {
-      await verifyIntegrationIsat();
+      // await verifyIntegrationIsat();
 
       runAllServices();
 
