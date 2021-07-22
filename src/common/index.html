@@ -10,69 +10,11 @@
     />
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script> -->
-    <style>
-      #notification {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        width: 200px;
-        padding: 20px;
-        border-radius: 5px;
-        background-color: white;
-        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-      }
-      .hidden {
-        display: none;
-      }
-      #message {
-        color: black;
-      }
-    </style>
   </head>
   <body>
     <div id="root">
       <div class="row">
-        <div
-          style="flex: 1; display: flex; flex-direction: column; padding: 7.5px"
-        >
-          <div style="display: flex; justify-content: space-between">
-            <h1>Veículos:</h1>
-            <button id="run_vehicles" onClick="startStopLogs('vehicles')">
-              Stop Logs
-            </button>
-          </div>
-
-          <div class="boxLogs" id="boxLogs_vehicles"><ul></ul></div>
-        </div>
-        <div
-          style="flex: 1; display: flex; flex-direction: column; padding: 7.5px"
-        >
-          <div style="display: flex; justify-content: space-between">
-            <h1>Referências:</h1>
-            <button id="run_references" onClick="startStopLogs('references')">
-              Stop Logs
-            </button>
-          </div>
-
-          <div class="boxLogs" id="boxLogs_references"><ul></ul></div>
-        </div>
-      </div>
-      <div class="row">
-        <div
-          style="flex: 1; display: flex; flex-direction: column; padding: 7.5px"
-        >
-          <div style="display: flex; justify-content: space-between">
-            <h1>Ordens:</h1>
-            <button id="run_orders" onClick="startStopLogs('orders')">
-              Stop Logs
-            </button>
-          </div>
-
-          <div class="boxLogs" id="boxLogs_orders"><ul></ul></div>
-        </div>
-        <div
-          style="flex: 1; display: flex; flex-direction: column; padding: 7.5px"
-        >
+        <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Gerais:</h1>
             <button id="run_generals" onClick="startStopLogs('generals')">
@@ -82,6 +24,50 @@
 
           <div class="boxLogs" id="boxLogs_generals"><ul></ul></div>
         </div>
+        <div class="child-row">
+          <div style="display: flex; justify-content: space-between">
+            <h1>Veículos:</h1>
+            <button id="run_vehicles" onClick="startStopLogs('vehicles')">
+              Stop Logs
+            </button>
+          </div>
+
+          <div class="boxLogs" id="boxLogs_vehicles"><ul></ul></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="child-row">
+          <div style="display: flex; justify-content: space-between">
+            <h1>Referências:</h1>
+            <button id="run_references" onClick="startStopLogs('references')">
+              Stop Logs
+            </button>
+          </div>
+
+          <div class="boxLogs" id="boxLogs_references"><ul></ul></div>
+        </div>
+        <div class="child-row">
+          <div style="display: flex; justify-content: space-between">
+            <h1>Ordens:</h1>
+            <button id="run_orders" onClick="startStopLogs('orders')">
+              Stop Logs
+            </button>
+          </div>
+
+          <div class="boxLogs" id="boxLogs_orders"><ul></ul></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="child-row">
+          <div style="display: flex; justify-content: space-between">
+            <h1>Caçambas/Tipos:</h1>
+            <button id="run_containers" onClick="startStopLogs('containers')">
+              Stop Logs
+            </button>
+          </div>
+
+          <div class="boxLogs" id="boxLogs_containers"><ul></ul></div>
+        </div>
       </div>
     </div>
     <script type="text/javascript">
@@ -89,12 +75,14 @@
       const { v4: uuidv4 } = require("uuid");
 
       const logs = {
+        containers: [],
         vehicles: [],
         references: [],
         orders: [],
         generals: [],
       };
       const runs = {
+        containers: true,
         vehicles: true,
         references: true,
         orders: true,

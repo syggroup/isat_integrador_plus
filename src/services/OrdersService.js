@@ -299,9 +299,6 @@ class OrdersService {
                     });
                   }
 
-                  /* this.writeLog(
-                    `(${new Date().toLocaleString()}) - Status das Ordens:${ordem}:${situacao}`
-                  ); */
                   concat_retornos.push(`Status da Ordem:${ordem}:${situacao}`);
                 })
               );

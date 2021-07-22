@@ -5,6 +5,7 @@ const Parametros = require("../controllers/Parametros");
 const ReferencesService = require("./ReferencesService");
 const VehiclesService = require("./VehiclesService");
 const OrdersService = require("./OrdersService");
+const ContainersService = require("./ContainersService");
 
 const api = require("../services/api");
 
@@ -16,6 +17,7 @@ class StartService {
     this.referencesService = new ReferencesService(window, db);
     this.vehiclesService = new VehiclesService(window, db);
     this.ordersService = new OrdersService(window, db);
+    this.containersService = new ContainersService(window, db);
 
     this.tokens = [];
     this.window = window;
@@ -40,12 +42,17 @@ class StartService {
       });
 
       if (this.tokens.length > 0) {
-        if (!gps_aberto || ms >= 1000 * 600) {
+        if (!gps_aberto || ms >= 1000 * 300) {
           await this.dados.setDados({
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
 
           await this.vehiclesService.execute({ tokens: this.tokens });
+
+          await this.containersService.execute({
+            tokens: this.tokens,
+            nfiliais: filiais,
+          });
 
           await this.referencesService.execute({ tokens: this.tokens });
 

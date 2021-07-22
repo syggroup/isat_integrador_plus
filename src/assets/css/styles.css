@@ -21,11 +21,11 @@ body {
   -webkit-font-smoothing: antialiased;
   color: white;
   background-color: black;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background: url(../image/background.png) 0% 0% / cover fixed, rgb(11, 10, 13);
+}
+
+h1 {
+  line-height: 40px;
 }
 
 #root {
@@ -33,13 +33,20 @@ body {
   flex-direction: column;
   width: 100%;
   padding: 7.5px;
-  height: 100%;
+  height: auto;
 }
 
 div.row {
-  flex: 1;
   display: flex;
   max-height: 50%;
+  height: 300px;
+}
+
+div.child-row {
+  display: flex;
+  flex-direction: column;
+  padding: 7.5px;
+  width: 50%;
 }
 
 button {
@@ -88,4 +95,21 @@ ul {
   flex-direction: column;
   max-height: 100%;
   overflow: auto;
+}
+
+#notification {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 200px;
+  padding: 20px;
+  border-radius: 5px;
+  background-color: white;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+.hidden {
+  display: none;
+}
+#message {
+  color: black;
 }

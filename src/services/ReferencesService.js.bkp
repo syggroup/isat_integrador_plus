@@ -113,7 +113,7 @@ class ReferencesService {
         };
 
         const response = await api
-          .post(`/v2/${token}/referencia`, data)
+          .post(`/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat Fornecedores: ${
@@ -126,35 +126,60 @@ class ReferencesService {
             )
           );
 
-        if (response) {
-          const retornos = response.data;
+        if (response && "data" in response && "dados" in response.data) {
+          if (response.data.dados.status === "OK") {
+            const retornos = response.data.dados.retorno;
 
-          const concat_retornos = [];
+            const concat_retornos = [];
 
-          await Promise.all(
-            retornos.map(async (retorno) => {
-              if (!retorno.erro) {
-                await this.fornecedores.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
-                await this.sagiIsatSinc.insert({
-                  codigo: retorno.registro.codigo,
-                  type: "FORNECEDOR",
-                  token,
-                });
-              }
-              concat_retornos.push(
-                `Fornecedor:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
-            })
-          );
+            await Promise.all(
+              retornos.map(async (retorno) => {
+                if (retorno.status === "OK") {
+                  await this.fornecedores.setIsatSinc({
+                    codigo: retorno.registro.codigo,
+                  });
+                  await this.sagiIsatSinc.insert({
+                    codigo: retorno.registro.codigo,
+                    type: "FORNECEDOR",
+                    token,
+                  });
+                }
+                concat_retornos.push(
+                  `Fornecedor:${retorno.registro.codigo}:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                );
+                /* this.writeLog(
+                  `(${new Date().toLocaleString()}) - Fornecedor:${
+                    retorno.registro.codigo
+                  }:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                ); */
+              })
+            );
 
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Fornecedores = ${concat_retornos.join(
+                ", "
+              )}`
+            );
+          } else {
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Fornecedores: ${
+                response.data.dados.retorno[0].erro.mensagem
+              }`
+            );
+          }
+        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Fornecedores = ${concat_retornos.join(
-              ", "
-            )}`
+            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Fornecedores: ${
+              response.data
+            }`
           );
         }
 
@@ -217,7 +242,7 @@ class ReferencesService {
         };
 
         const response = await api
-          .post(`/v2/${token}/referencia`, data)
+          .post(`/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat Ende de Fornecedores: ${
@@ -230,35 +255,60 @@ class ReferencesService {
             )
           );
 
-        if (response) {
-          const retornos = response.data;
+        if (response && "data" in response && "dados" in response.data) {
+          if (response.data.dados.status === "OK") {
+            const retornos = response.data.dados.retorno;
 
-          const concat_retornos = [];
+            const concat_retornos = [];
 
-          await Promise.all(
-            retornos.map(async (retorno) => {
-              if (!retorno.erro) {
-                await this.fornecedores.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
-                await this.sagiIsatSinc.insert({
-                  codigo: retorno.registro.codigo,
-                  type: "FORNECEDOR",
-                  token,
-                });
-              }
-              concat_retornos.push(
-                `Ende de Fornecedor:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
-            })
-          );
+            await Promise.all(
+              retornos.map(async (retorno) => {
+                if (retorno.status === "OK") {
+                  await this.fornecedores.setIsatSinc({
+                    codigo: retorno.registro.codigo,
+                  });
+                  await this.sagiIsatSinc.insert({
+                    codigo: retorno.registro.codigo,
+                    type: "FORNECEDOR",
+                    token,
+                  });
+                }
+                /* this.writeLog(
+                  `(${new Date().toLocaleString()}) - Ende de Fornecedores:${
+                    retorno.registro.codigo
+                  }:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                );*/
+                concat_retornos.push(
+                  `Ende de Fornecedor:${retorno.registro.codigo}:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                );
+              })
+            );
 
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Ende de Fornecedores = ${concat_retornos.join(
+                ", "
+              )}`
+            );
+          } else {
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Ende de Fornecedores: ${
+                response.data.dados.retorno[0].erro.mensagem
+              }`
+            );
+          }
+        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Ende de Fornecedores = ${concat_retornos.join(
-              ", "
-            )}`
+            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Ende de Fornecedores: ${
+              response.data
+            }`
           );
         }
 
@@ -328,7 +378,7 @@ class ReferencesService {
         };
 
         const response = await api
-          .post(`/v2/${token}/referencia`, data)
+          .post(`/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat Clientes: ${
@@ -341,35 +391,60 @@ class ReferencesService {
             )
           );
 
-        if (response) {
-          const retornos = response.data;
+        if (response && "data" in response && "dados" in response.data) {
+          if (response.data.dados.status === "OK") {
+            const retornos = response.data.dados.retorno;
 
-          const concat_retornos = [];
+            const concat_retornos = [];
 
-          await Promise.all(
-            retornos.map(async (retorno) => {
-              if (!retorno.erro) {
-                await this.clientes.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
-                await this.sagiIsatSinc.insert({
-                  codigo: retorno.registro.codigo,
-                  type: "CLIENTE",
-                  token,
-                });
-              }
-              concat_retornos.push(
-                `Cliente:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
-            })
-          );
+            await Promise.all(
+              retornos.map(async (retorno) => {
+                if (retorno.status === "OK") {
+                  await this.clientes.setIsatSinc({
+                    codigo: retorno.registro.codigo,
+                  });
+                  await this.sagiIsatSinc.insert({
+                    codigo: retorno.registro.codigo,
+                    type: "CLIENTE",
+                    token,
+                  });
+                }
+                /* this.writeLog(
+                  `(${new Date().toLocaleString()}) - Cliente:${
+                    retorno.registro.codigo
+                  }:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                ); */
+                concat_retornos.push(
+                  `Cliente:${retorno.registro.codigo}:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                );
+              })
+            );
 
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Clientes = ${concat_retornos.join(
+                ", "
+              )}`
+            );
+          } else {
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Clientes: ${
+                response.data.dados.retorno[0].erro.mensagem
+              }`
+            );
+          }
+        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Clientes = ${concat_retornos.join(
-              ", "
-            )}`
+            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Clientes: ${
+              response.data
+            }`
           );
         }
 
@@ -439,7 +514,7 @@ class ReferencesService {
         };
 
         const response = await api
-          .post(`/v2/${token}/referencia`, data)
+          .post(`/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat Concorrentes: ${
@@ -452,35 +527,60 @@ class ReferencesService {
             )
           );
 
-        if (response) {
-          const retornos = response.data;
+        if (response && "data" in response && "dados" in response.data) {
+          if (response.data.dados.status === "OK") {
+            const retornos = response.data.dados.retorno;
 
-          const concat_retornos = [];
+            const concat_retornos = [];
 
-          await Promise.all(
-            retornos.map(async (retorno) => {
-              if (!retorno.erro) {
-                await this.concorrentes.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
-                await this.sagiIsatSinc.insert({
-                  codigo: retorno.registro.codigo,
-                  type: "CONCORRENTE",
-                  token,
-                });
-              }
-              concat_retornos.push(
-                `Concorrente:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
-            })
-          );
+            await Promise.all(
+              retornos.map(async (retorno) => {
+                if (retorno.status === "OK") {
+                  await this.concorrentes.setIsatSinc({
+                    codigo: retorno.registro.codigo,
+                  });
+                  await this.sagiIsatSinc.insert({
+                    codigo: retorno.registro.codigo,
+                    type: "CONCORRENTE",
+                    token,
+                  });
+                }
+                /* this.writeLog(
+                  `(${new Date().toLocaleString()}) - Concorrente:${
+                    retorno.registro.codigo
+                  }:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                ); */
+                concat_retornos.push(
+                  `Concorrente:${retorno.registro.codigo}:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                );
+              })
+            );
 
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Concorrentes = ${concat_retornos.join(
+                ", "
+              )}`
+            );
+          } else {
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Concorrentes: ${
+                response.data.dados.retorno[0].erro.mensagem
+              }`
+            );
+          }
+        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Concorrentes = ${concat_retornos.join(
-              ", "
-            )}`
+            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Concorrentes: ${
+              response.data
+            }`
           );
         }
 
@@ -554,7 +654,7 @@ class ReferencesService {
         };
 
         const response = await api
-          .post(`/v2/${token}/referencia`, data)
+          .post(`/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat Motoristas: ${
@@ -567,35 +667,60 @@ class ReferencesService {
             )
           );
 
-        if (response) {
-          const retornos = response.data.dados.retorno;
+        if (response && "data" in response && "dados" in response.data) {
+          if (response.data.dados.status === "OK") {
+            const retornos = response.data.dados.retorno;
 
-          const concat_retornos = [];
+            const concat_retornos = [];
 
-          await Promise.all(
-            retornos.map(async (retorno) => {
-              if (!retorno.erro) {
-                await this.motoristas.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
-                await this.sagiIsatSinc.insert({
-                  codigo: retorno.registro.codigo,
-                  type: "MOTORISTA",
-                  token,
-                });
-              }
-              concat_retornos.push(
-                `Motorista:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
-            })
-          );
+            await Promise.all(
+              retornos.map(async (retorno) => {
+                if (retorno.status === "OK") {
+                  await this.motoristas.setIsatSinc({
+                    codigo: retorno.registro.codigo,
+                  });
+                  await this.sagiIsatSinc.insert({
+                    codigo: retorno.registro.codigo,
+                    type: "MOTORISTA",
+                    token,
+                  });
+                }
+                /* this.writeLog(
+                  `(${new Date().toLocaleString()}) - Motorista:${
+                    retorno.registro.codigo
+                  }:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                ); */
+                concat_retornos.push(
+                  `Motorista:${retorno.registro.codigo}:${
+                    retorno.status === "OK"
+                      ? "OK"
+                      : `ERRO:${retorno.erro.mensagem}`
+                  }`
+                );
+              })
+            );
 
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Motoristas = ${concat_retornos.join(
+                ", "
+              )}`
+            );
+          } else {
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Motoristas: ${
+                response.data.dados.retorno[0].erro.mensagem
+              }`
+            );
+          }
+        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Motoristas = ${concat_retornos.join(
-              ", "
-            )}`
+            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Motoristas: ${
+              response.data
+            }`
           );
         }
 

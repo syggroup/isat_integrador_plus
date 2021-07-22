@@ -52,7 +52,7 @@ class VehiclesService {
   async manageVehicles(token) {
     try {
       const response = await api
-        .get(`/${token}/veiculo`)
+        .get(`/v2/${token}/veiculo`)
         .catch((err) =>
           this.writeLog(
             `(${new Date().toLocaleString()}) - Erro requisição veículos Api Isat: ${
@@ -65,34 +65,18 @@ class VehiclesService {
           )
         );
 
-      if (response && "data" in response && "dados" in response.data) {
-        if (response.data.dados.status === "OK") {
-          const registros = response.data.dados.retorno.registros;
+      if (response) {
+        const registros = response.data;
 
-          await Promise.all(
-            registros.map(async (registro) => {
-              const count = await this.veiculos.update(registro);
-              this.writeLog(
-                `(${new Date().toLocaleString()}) - Veiculo:${registro.placa}:${
-                  count > 0
-                    ? "OK"
-                    : "ERRO:Placa não encontrada na base de dados"
-                }`
-              );
-            })
-          );
-        } else {
-          this.writeLog(
-            `(${new Date().toLocaleString()}) - Erro retorno veículos Api Isat: ${
-              response.data.dados.retorno[0].erro.mensagem
-            }`
-          );
-        }
-      } else if (response && "data" in response) {
-        this.writeLog(
-          `(${new Date().toLocaleString()}) - Retorno inesperado veículos Api Isat: ${
-            response.data
-          }`
+        await Promise.all(
+          registros.map(async (registro) => {
+            const count = await this.veiculos.update(registro);
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Veiculo:${registro.placa}:${
+                count > 0 ? "OK" : "ERRO:Placa não encontrada na base de dados"
+              }`
+            );
+          })
         );
       }
     } catch (err) {
