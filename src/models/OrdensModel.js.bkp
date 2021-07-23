@@ -19,7 +19,14 @@ class OrdensModel {
         trim(b.status) as status,
         trim(c.numcnh) as cnh,
         trim(b.obs1) as obs,
-        trim(b.empresa) as filial
+        trim(b.empresa) as filial,
+        trim(b.hrchefor) as hrchefor,
+        trim(b.hrsaifor) as hrsaifor,
+        trim(b.numero) as numero,
+        trim(b.numeroret) as numeroret,
+        b.kmsai,
+        b.kmchefor,
+        b.kmsaifor
       FROM isat_ordem_temp a
       LEFT JOIN ordem b on a.ordem=b.ordem
       LEFT JOIN mot as c on c.codmot=b.codmot
@@ -46,7 +53,14 @@ class OrdensModel {
         '' as status,
         '' as cnh,
         '' as obs,
-        '' as filial
+        '' as filial,
+        '' as hrchefor,
+        '' as hrsaifor,
+        '' as numero,
+        '' as numeroret,
+        0 as kmsai,
+        0 as kmchefor,
+        0 as kmsaifor
       FROM isat_ordem_temp a
       WHERE a.ordem>0 AND a.acao='DELETE'
       ORDER BY 4 DESC
@@ -242,16 +256,14 @@ class OrdensModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     const result_ordem = await this.db.query(`
-      SELECT kmsai, kmchefor, kmsaifor FROM ordem WHERE ordem=${ordem}
+      SELECT hrchefor, hrsaifor FROM ordem WHERE ordem=${ordem}
     `);
 
     if (result_ordem[1].rowCount > 0) {
       if (
-        (result_ordem[1].rows[0].kmsai != parseFloat(km.valor).toFixed(1) &&
-          km.tipo === "IDA") ||
-        ((result_ordem[1].rows[0].kmchefor != parseFloat(km.valor).toFixed(1) ||
-          result_ordem[1].rows[0].kmsaifor !=
-            parseFloat(km.valor).toFixed(1)) &&
+        (result_ordem[1].rows[0].kmsai !== km.valor && km.tipo === "IDA") ||
+        ((result_ordem[1].rows[0].kmchefor !== km.valor ||
+          result_ordem[1].rows[0].kmsaifor !== km.valor) &&
           km.tipo === "VOLTA")
       ) {
         const result = await this.db.query(`

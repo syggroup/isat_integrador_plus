@@ -29,6 +29,8 @@ class OrdersService {
         })
       );
 
+      await this.ordens.updateForDelete2();
+
       this.writeLog(
         `(${new Date().toLocaleString()}) - Servico ordens finalizado`
       );
@@ -202,8 +204,6 @@ class OrdersService {
         });
         await this.sleep(50);
       }
-
-      await this.ordens.updateForDelete2();
 
       this.writeLog(
         `(${new Date().toLocaleString()}) - Sincronismo Ordens finalizado`
