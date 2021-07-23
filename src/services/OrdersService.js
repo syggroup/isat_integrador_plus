@@ -60,57 +60,57 @@ class OrdersService {
         filial,
       });
 
+      const del_orders_in_isat = [];
+      const upd_orders_in_isat = [];
+      const remove_from_upd_orders_in_isat = [];
+
       const ordens = await this.ordens.getOrdens({
         filial,
         data_inicial_sinc_isat,
       });
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Ordens para sincronizar: ${
-          ordens.length
-        }`
+
+      ordens.forEach((ordem) => {
+        if (ordem.acao.trim() !== "DELETE") {
+          upd_orders_in_isat.push(ordem);
+        } else {
+          del_orders_in_isat.push(ordem);
+        }
+      });
+
+      upd_orders_in_isat.forEach((uoi) => {
+        const index = del_orders_in_isat.findIndex(
+          (doi) => doi.ordem === uoi.ordem
+        );
+        if (index !== -1) {
+          remove_from_upd_orders_in_isat.push(index);
+        }
+      });
+
+      remove_from_upd_orders_in_isat.forEach((ruoi) =>
+        upd_orders_in_isat.splice(ruoi, 1)
       );
 
-      while (ordens.length > 0) {
-        const reg = ordens.splice(0, 1)[0];
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Ordens para deletar: ${
+          del_orders_in_isat.length
+        }`
+      );
+      while (del_orders_in_isat.length > 0) {
+        const reg = del_orders_in_isat.splice(0, 1)[0];
 
         const data = {
           registros: [
             {
               ordem: reg.ordem,
-              ...(reg.acao.trim() !== "DELETE" && { tipo: reg.tipo }),
-              ...(reg.acao.trim() !== "DELETE" && { placa: reg.placa }),
-              ...(reg.acao.trim() !== "DELETE" && { datasai: reg.datasai }),
-              ...(reg.acao.trim() !== "DELETE" && {
-                codigo: parseInt(reg.codigo, 10),
-              }),
-              ...(reg.acao.trim() !== "DELETE" && {
-                sequencia: parseInt(reg.sequencia, 10),
-              }),
-              ...(reg.acao.trim() !== "DELETE" && { horasai: reg.horasai }),
-              ...(reg.acao.trim() !== "DELETE" && { status: reg.status }),
-              ...(reg.acao.trim() !== "DELETE" && {
-                num_col: parseInt(reg.num_col, 10),
-              }),
-              ...(reg.acao.trim() !== "DELETE" && {
-                cnh: reg.cnh.replace(/\D/g, ""),
-              }),
-              ...(reg.acao.trim() !== "DELETE" && { filial: reg.filial }),
-              ...(reg.acao.trim() !== "DELETE" &&
-                reg.observacoes && { observacoes: reg.obs }),
             },
           ],
         };
 
         const response = await api
-          .post(
-            `/${token}/ordem_rastreio${
-              reg.acao.trim() === "DELETE" ? "/delete" : ""
-            }`,
-            data
-          )
+          .post(`/v2/${token}/ordem_rastreio/delete`, data)
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Ordens(${reg.acao.trim()}): ${
+              `(${new Date().toLocaleString()}) - Erro requisição Api Isat delete Ordens(${reg.acao.trim()}): ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -120,56 +120,80 @@ class OrdersService {
             )
           );
 
-        if (response && "data" in response && "dados" in response.data) {
-          if (response.data.dados.status === "OK") {
-            const retorno = response.data.dados.retorno[0];
+        if (response) {
+          const retorno = response.data[0];
 
-            if (
-              (retorno.status === "OK" && reg.acao.trim() === "DELETE") ||
-              (retorno.status === "OK" &&
-                reg.acao.trim() !== "DELETE" &&
-                (retorno.cadastrou === "SIM" || retorno.atualizou === "SIM")) ||
-              (retorno.status === "ERRO" &&
-                reg.acao.trim() === "DELETE" &&
-                retorno.mensagem.search("encontrada") !== -1)
-            ) {
-              await this.ordens.delete({
-                sr_recno: reg.sr_recno,
-              });
-            }
-            this.writeLog(
-              `(${new Date().toLocaleString()}) - Ordem:${
-                retorno.registro.ordem
-              }:${reg.acao.trim()}:${
-                reg.acao.trim() === "DELETE"
-                  ? retorno.status === "OK"
-                    ? "OK"
-                    : `ERRO:${
-                        retorno.mensagem
-                          ? retorno.mensagem
-                          : retorno.erro.mensagem
-                      }`
-                  : retorno.status === "OK"
-                  ? retorno.cadastrou === "SIM" || retorno.atualizou === "SIM"
-                    ? "OK"
-                    : `ERRO:${retorno.mensagem}`
-                  : `ERRO:${retorno.erro.mensagem}`
-              }`
-            );
-          } else {
-            this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Ordens${reg.acao.trim()}: ${
-                reg.acao.trim() === "DELETE"
-                  ? response.data.dados.retorno[0].mensagem
-                  : response.data.dados.retorno[0].erro.mensagem
-              }`
-            );
+          if (!retorno.erro) {
+            await this.ordens.delete({
+              sr_recno: reg.sr_recno,
+            });
           }
-        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Ordens(${reg.acao.trim()}): ${
-              response.data
-            }`
+            `(${new Date().toLocaleString()}) - Ordem:${
+              retorno.registro.ordem
+            }:DELETE:${!retorno.erro ? "OK" : `ERRO:${retorno.erro}`}`
+          );
+        }
+
+        await this.dados.setDados({
+          datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
+        });
+        await this.sleep(50);
+      }
+
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Ordens para sincronizar: ${
+          upd_orders_in_isat.length
+        }`
+      );
+      while (upd_orders_in_isat.length > 0) {
+        const reg = upd_orders_in_isat.splice(0, 1)[0];
+
+        const data = {
+          registros: [
+            {
+              ordem: reg.ordem,
+              tipo: reg.tipo,
+              placa: reg.placa,
+              datasai: reg.datasai,
+              codigo: parseInt(reg.codigo, 10),
+              sequencia: parseInt(reg.sequencia, 10),
+              horasai: reg.horasai,
+              status: reg.status,
+              num_col: parseInt(reg.num_col, 10),
+              cnh: reg.cnh.replace(/\D/g, ""),
+              filial: reg.filial,
+              observacoes: reg.obs,
+            },
+          ],
+        };
+
+        const response = await api
+          .post(`/v2/${token}/ordem_rastreio`, data)
+          .catch((err) =>
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro requisição Api Isat insert/update Ordens(${reg.acao.trim()}): ${
+                err.response
+                  ? `${err.response.status} - ${JSON.stringify(
+                      err.response.data
+                    )}`
+                  : err.message
+              }`
+            )
+          );
+
+        if (response) {
+          const retorno = response.data[0];
+
+          if (!retorno.erro) {
+            await this.ordens.delete({
+              sr_recno: reg.sr_recno,
+            });
+          }
+          this.writeLog(
+            `(${new Date().toLocaleString()}) - Ordem:${
+              retorno.registro.ordem
+            }:INSERT/UPDATE:${!retorno.erro ? "OK" : `ERRO:${retorno.erro}`}`
           );
         }
 
@@ -214,7 +238,7 @@ class OrdersService {
         const data = regs.map((r) => r.ordem);
 
         const response = await api
-          .post(`/${token}/ordem_rastreio/status`, data)
+          .post(`/v2/${token}/ordem_rastreio/status`, data)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat Status das Ordens: ${
@@ -227,100 +251,78 @@ class OrdersService {
             )
           );
 
-        if (response && "data" in response && "dados" in response.data) {
-          if (response.data.dados.status === "OK") {
-            const retornos = response.data.dados.retorno;
+        if (response) {
+          const retornos = response.data;
 
-            if (typeof retornos === "object") {
-              const concat_retornos = [];
+          const concat_retornos = [];
 
-              await Promise.all(
-                retornos.registros.map(async (registro) => {
-                  const {
+          await Promise.all(
+            retornos.map(async (registro) => {
+              const { ordem, situacao, checks, imprevistos, cacambas, kms } =
+                registro;
+
+              if (checks.length > 0) {
+                await this.ordens.treatCheck({
+                  ordem,
+                  check: checks[0],
+                });
+
+                if (checks[1] !== undefined) {
+                  await this.ordens.treatCheck({
                     ordem,
-                    situacao,
-                    checks,
-                    imprevistos,
-                    cacambas,
-                    kms,
-                  } = registro;
+                    check: checks[1],
+                  });
+                }
+              }
 
-                  if (checks.length > 0) {
-                    await this.ordens.treatCheck({
-                      ordem,
-                      check: checks[0],
-                    });
-
-                    if (checks[1] !== undefined) {
-                      await this.ordens.treatCheck({
+              if (imprevistos.length > 0) {
+                await Promise.all(
+                  imprevistos.map(
+                    async (imprevisto) =>
+                      await this.ordens.treatImprevisto({
                         ordem,
-                        check: checks[1],
-                      });
-                    }
-                  }
+                        imprevisto,
+                      })
+                  )
+                );
+              }
 
-                  if (imprevistos.length > 0) {
-                    await Promise.all(
-                      imprevistos.map(
-                        async (imprevisto) =>
-                          await this.ordens.treatImprevisto({
-                            ordem,
-                            imprevisto,
-                          })
-                      )
-                    );
-                  }
+              if (movimenta_cacamba) {
+                if (cacambas && cacambas[0].numeros.length > 0) {
+                  await this.ordens.treatCacamba({
+                    ordem,
+                    cacamba: cacambas[0],
+                  });
+                }
+                if (cacambas && cacambas[1].numeros.length > 0) {
+                  await this.ordens.treatCacamba({
+                    ordem,
+                    cacamba: cacambas[1],
+                  });
+                }
+              }
 
-                  if (movimenta_cacamba) {
-                    if (cacambas && cacambas[0].numeros.length > 0) {
-                      await this.ordens.treatCacamba({
-                        ordem,
-                        cacamba: cacambas[0],
-                      });
-                    }
-                    if (cacambas && cacambas[1].numeros.length > 0) {
-                      await this.ordens.treatCacamba({
-                        ordem,
-                        cacamba: cacambas[1],
-                      });
-                    }
-                  }
+              if (kms[0].valor) {
+                await this.ordens.treatKm({
+                  ordem,
+                  km: kms[0],
+                });
+              }
+              if (kms[1].valor) {
+                await this.ordens.treatKm({
+                  ordem,
+                  km: kms[1],
+                });
+              }
 
-                  if (kms[0].valor) {
-                    await this.ordens.treatKm({
-                      ordem,
-                      km: kms[0],
-                    });
-                  }
-                  if (kms[1].valor) {
-                    await this.ordens.treatKm({
-                      ordem,
-                      km: kms[1],
-                    });
-                  }
+              concat_retornos.push(`Status da Ordem:${ordem}:${situacao}`);
+            })
+          );
 
-                  concat_retornos.push(`Status da Ordem:${ordem}:${situacao}`);
-                })
-              );
-
-              this.writeLog(
-                `(${new Date().toLocaleString()}) - Status das Ordens = ${concat_retornos.join(
-                  ", "
-                )}`
-              );
-            }
-          } else {
-            this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro retorno Api Isat Status das Ordens: ${
-                response.data.dados.retorno[0].erro.mensagem
-              }`
-            );
-          }
-        } else if (response && "data" in response) {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Retorno inesperado Api Isat Status das Ordens: ${
-              response.data
-            }`
+            `(${new Date().toLocaleString()}) - Status das Ordens = ${concat_retornos.join(
+              ", "
+            )}`
           );
         }
 
