@@ -49,7 +49,7 @@ class OrdensModel {
         '' as filial
       FROM isat_ordem_temp a
       WHERE a.ordem>0 AND a.acao='DELETE'
-      ORDER BY 4 DESC
+      ORDER BY 11 DESC, 4 DESC
     `);
     return result[1].rows;
   }

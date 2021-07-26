@@ -59,7 +59,7 @@ class ContainersService {
     });
   }
 
-  async manageTypeContainers({ token }) {
+  async manageTypeContainers({ token, filial }) {
     try {
       const del_tipo_cacambas_in_isat = [];
       const upd_tipo_cacambas_in_isat = [];
@@ -73,7 +73,7 @@ class ContainersService {
         .get(`/v2/${token}/tipo_cacamba`)
         .catch((err) =>
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Erro requisição consulta Tipo_Caçambas Api Isat: ${
+            `(${new Date().toLocaleString()} / ${filial}) - Erro requisição consulta Tipo_Caçambas Api Isat: ${
               err.response
                 ? `${err.response.status} - ${JSON.stringify(
                     err.response.data
@@ -83,7 +83,7 @@ class ContainersService {
           )
         );
 
-      if (response) {
+      if (response && response.status === 200) {
         const registros = response.data;
 
         registros.forEach((reg) => {
@@ -103,7 +103,7 @@ class ContainersService {
         });
 
         this.writeLog(
-          `(${new Date().toLocaleString()}) - Tipo_Caçambas para deletar: ${
+          `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçambas para deletar: ${
             del_tipo_cacambas_in_isat.length
           }`
         );
@@ -115,7 +115,7 @@ class ContainersService {
             })
             .catch((err) =>
               this.writeLog(
-                `(${new Date().toLocaleString()}) - Erro requisição deleta Tipo_Caçambas Api Isat: ${
+                `(${new Date().toLocaleString()} / ${filial}) - Erro requisição deleta Tipo_Caçambas Api Isat: ${
                   err.response
                     ? `${err.response.status} - ${JSON.stringify(
                         err.response.data
@@ -125,12 +125,12 @@ class ContainersService {
               )
             );
 
-          if (response) {
+          if (response && response.status === 200) {
             const registros = response.data;
 
             registros.forEach((reg) => {
               this.writeLog(
-                `(${new Date().toLocaleString()}) - Tipo_Caçamba:${
+                `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçamba:${
                   reg.registro._id
                 }:DELETE:${reg.erro ? `ERRO:${reg.erro}` : "OK"}`
               );
@@ -149,7 +149,7 @@ class ContainersService {
       });
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Tipo_Caçambas para sincronizar: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçambas para sincronizar: ${
           upd_tipo_cacambas_in_isat.length
         }`
       );
@@ -161,7 +161,7 @@ class ContainersService {
           })
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição cadastra Tipo_Caçambas Api Isat: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição cadastra Tipo_Caçambas Api Isat: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -171,7 +171,7 @@ class ContainersService {
             )
           );
 
-        if (response) {
+        if (response && response.status === 200) {
           const retornos = response.data;
 
           const concat_retornos = [];
@@ -194,7 +194,7 @@ class ContainersService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Tipo_Caçambas = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçambas = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -202,11 +202,11 @@ class ContainersService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Tipo_Caçambas finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Tipo_Caçambas finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo dos Tipo_Caçambas: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Tipo_Caçambas: ${
           err.message
         }`
       );
@@ -217,7 +217,7 @@ class ContainersService {
     }
   }
 
-  async manageContainers({ token, movimenta_cacamba }, nfiliais) {
+  async manageContainers({ token, movimenta_cacamba, filial }, nfiliais) {
     try {
       const del_cacambas_in_isat = [];
       const upd_cacambas_in_isat = [];
@@ -232,7 +232,7 @@ class ContainersService {
         .get(`/v2/${token}/cacamba`)
         .catch((err) =>
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Erro requisição consulta Caçambas Api Isat: ${
+            `(${new Date().toLocaleString()} / ${filial}) - Erro requisição consulta Caçambas Api Isat: ${
               err.response
                 ? `${err.response.status} - ${JSON.stringify(
                     err.response.data
@@ -242,7 +242,7 @@ class ContainersService {
           )
         );
 
-      if (response) {
+      if (response && response.status === 200) {
         const registros = response.data;
 
         registros.forEach((reg) => cacambas_isat.push(reg));
@@ -254,7 +254,7 @@ class ContainersService {
         });
 
         this.writeLog(
-          `(${new Date().toLocaleString()}) - Caçambas para deletar: ${
+          `(${new Date().toLocaleString()} / ${filial}) - Caçambas para deletar: ${
             del_cacambas_in_isat.length
           }`
         );
@@ -266,7 +266,7 @@ class ContainersService {
             })
             .catch((err) =>
               this.writeLog(
-                `(${new Date().toLocaleString()}) - Erro requisição deleta Caçambas Api Isat: ${
+                `(${new Date().toLocaleString()} / ${filial}) - Erro requisição deleta Caçambas Api Isat: ${
                   err.response
                     ? `${err.response.status} - ${JSON.stringify(
                         err.response.data
@@ -276,12 +276,12 @@ class ContainersService {
               )
             );
 
-          if (response) {
+          if (response && response.status === 200) {
             const registros = response.data;
 
             registros.forEach((reg) => {
               this.writeLog(
-                `(${new Date().toLocaleString()}) - Caçamba:${
+                `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
                   reg.registro.placa
                 }:DELETE:${reg.erro ? `ERRO:${reg.erro}` : "OK"}`
               );
@@ -296,7 +296,9 @@ class ContainersService {
             const count = await this.cacambas.update(registro);
 
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Caçamba:${registro.placa}:${
+              `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
+                registro.placa
+              }:${
                 count > 0
                   ? "OK"
                   : "ERRO:Caçamba não encontrada na base de dados"
@@ -321,7 +323,7 @@ class ContainersService {
       });
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Caçambas para sincronizar: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Caçambas para sincronizar: ${
           upd_cacambas_in_isat.length
         }`
       );
@@ -333,7 +335,7 @@ class ContainersService {
           })
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição cadastra Caçambas Api Isat: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição cadastra Caçambas Api Isat: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -343,7 +345,7 @@ class ContainersService {
             )
           );
 
-        if (response) {
+        if (response && response.status === 200) {
           const retornos = response.data;
 
           const concat_retornos = [];
@@ -366,7 +368,7 @@ class ContainersService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Caçambas = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Caçambas = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -374,11 +376,11 @@ class ContainersService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Caçambas finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Caçambas finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo das Caçambas: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo das Caçambas: ${
           err.message
         }`
       );

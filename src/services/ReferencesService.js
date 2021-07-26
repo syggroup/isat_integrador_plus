@@ -31,13 +31,13 @@ class ReferencesService {
       );
 
       await Promise.all(
-        tokens.map(({ token }) => {
+        tokens.map(({ token, filial }) => {
           return Promise.all([
-            this.manageSuppliers(token),
-            this.manageAddressSuppliers(token),
-            this.manageCustomers(token),
-            this.manageCompetitors(token),
-            this.manageDrivers(token),
+            this.manageSuppliers(token, filial),
+            this.manageAddressSuppliers(token, filial),
+            this.manageCustomers(token, filial),
+            this.manageCompetitors(token, filial),
+            this.manageDrivers(token, filial),
           ]);
         })
       );
@@ -69,7 +69,7 @@ class ReferencesService {
     });
   }
 
-  async manageSuppliers(token) {
+  async manageSuppliers(token, filial) {
     try {
       await this.sagiIsatSinc.delete({
         type: "FORNECEDOR",
@@ -80,7 +80,7 @@ class ReferencesService {
 
       const fornecedores = await this.fornecedores.getFornecedores({ token });
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Fornecedores para sincronizar: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Fornecedores para sincronizar: ${
           fornecedores.length
         }`
       );
@@ -116,7 +116,7 @@ class ReferencesService {
           .post(`/v2/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Fornecedores: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Fornecedores: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -126,7 +126,7 @@ class ReferencesService {
             )
           );
 
-        if (response) {
+        if (response && response.status === 200) {
           const retornos = response.data;
 
           const concat_retornos = [];
@@ -152,7 +152,7 @@ class ReferencesService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Fornecedores = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Fornecedores = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -165,11 +165,11 @@ class ReferencesService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Fornecedores finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Fornecedores finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo dos Fornecedores: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Fornecedores: ${
           err.message
         }`
       );
@@ -180,11 +180,11 @@ class ReferencesService {
     }
   }
 
-  async manageAddressSuppliers(token) {
+  async manageAddressSuppliers(token, filial) {
     try {
       const enderecos = await this.forEnde.getForsEndes({ token });
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Ende de Fornecedores para sincronizar: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Ende de Fornecedores para sincronizar: ${
           enderecos.length
         }`
       );
@@ -220,7 +220,7 @@ class ReferencesService {
           .post(`/v2/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Ende de Fornecedores: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Ende de Fornecedores: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -230,7 +230,7 @@ class ReferencesService {
             )
           );
 
-        if (response) {
+        if (response && response.status === 200) {
           const retornos = response.data;
 
           const concat_retornos = [];
@@ -256,7 +256,7 @@ class ReferencesService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Ende de Fornecedores = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Ende de Fornecedores = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -269,11 +269,11 @@ class ReferencesService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Ende de Fornecedores finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Ende de Fornecedores finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo dos Ende de Fornecedores: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Ende de Fornecedores: ${
           err.message
         }`
       );
@@ -284,7 +284,7 @@ class ReferencesService {
     }
   }
 
-  async manageCustomers(token) {
+  async manageCustomers(token, filial) {
     try {
       await this.sagiIsatSinc.delete({
         type: "CLIENTE",
@@ -295,7 +295,7 @@ class ReferencesService {
 
       const clientes = await this.clientes.getClientes({ token });
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Clientes para sincronizar: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Clientes para sincronizar: ${
           clientes.length
         }`
       );
@@ -331,7 +331,7 @@ class ReferencesService {
           .post(`/v2/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Clientes: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Clientes: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -341,7 +341,7 @@ class ReferencesService {
             )
           );
 
-        if (response) {
+        if (response && response.status === 200) {
           const retornos = response.data;
 
           const concat_retornos = [];
@@ -367,7 +367,7 @@ class ReferencesService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Clientes = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Clientes = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -380,11 +380,11 @@ class ReferencesService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Clientes finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Clientes finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo dos Clientes: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Clientes: ${
           err.message
         }`
       );
@@ -395,7 +395,7 @@ class ReferencesService {
     }
   }
 
-  async manageCompetitors(token) {
+  async manageCompetitors(token, filial) {
     try {
       await this.sagiIsatSinc.delete({
         type: "CONCORRENTE",
@@ -406,7 +406,7 @@ class ReferencesService {
 
       const concorrentes = await this.concorrentes.getConcorrentes({ token });
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Concorrentes para sincronizar: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Concorrentes para sincronizar: ${
           concorrentes.length
         }`
       );
@@ -442,7 +442,7 @@ class ReferencesService {
           .post(`/v2/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Concorrentes: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Concorrentes: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -452,7 +452,7 @@ class ReferencesService {
             )
           );
 
-        if (response) {
+        if (response && response.status === 200) {
           const retornos = response.data;
 
           const concat_retornos = [];
@@ -478,7 +478,7 @@ class ReferencesService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Concorrentes = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Concorrentes = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -491,11 +491,11 @@ class ReferencesService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Concorrentes finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Concorrentes finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo dos Concorrentes: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Concorrentes: ${
           err.message
         }`
       );
@@ -506,7 +506,7 @@ class ReferencesService {
     }
   }
 
-  async manageDrivers(token) {
+  async manageDrivers(token, filial) {
     try {
       await this.sagiIsatSinc.delete({
         type: "MOTORISTA",
@@ -557,7 +557,7 @@ class ReferencesService {
           .post(`/v2/${token}/referencia`, data)
           .catch((err) =>
             this.writeLog(
-              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Motoristas: ${
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Motoristas: ${
                 err.response
                   ? `${err.response.status} - ${JSON.stringify(
                       err.response.data
@@ -567,8 +567,8 @@ class ReferencesService {
             )
           );
 
-        if (response) {
-          const retornos = response.data.dados.retorno;
+        if (response && response.status === 200) {
+          const retornos = response.data;
 
           const concat_retornos = [];
 
@@ -593,7 +593,7 @@ class ReferencesService {
           );
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Motoristas = ${concat_retornos.join(
+            `(${new Date().toLocaleString()} / ${filial}) - Motoristas = ${concat_retornos.join(
               ", "
             )}`
           );
@@ -606,11 +606,11 @@ class ReferencesService {
       }
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Sincronismo Motoristas finalizado`
+        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Motoristas finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo dos Motoristas: ${
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Motoristas: ${
           err.message
         }`
       );

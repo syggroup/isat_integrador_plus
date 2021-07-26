@@ -125,13 +125,25 @@ async function setGlobalConnectionDatabase() {
 }
 
 async function verifyIntegrationIsat() {
-  if (!global_config.verifica_integracao_isat) {
-    global_config.verifica_integracao_isat = true;
+  try {
+    if (!global_config.verifica_integracao_isat) {
+      global_config.verifica_integracao_isat = true;
 
-    await new StartService(
-      global_config.window,
-      global_config.db
-    ).verificaIntegracaoIsat();
+      return await new StartService(
+        global_config.window,
+        global_config.db
+      ).verificaIntegracaoIsat();
+    }
+
+    return true;
+  } catch (err) {
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro verifica integração iSat: ${
+        err.message
+      }`,
+      type: "generals",
+    });
+    return false;
   }
 }
 

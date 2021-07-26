@@ -13,7 +13,7 @@ class Parametros {
       if (
         token.usa === ".T." &&
         token.token &&
-        !tokens_ok.includes(token.token)
+        tokens_ok.findIndex((t) => t.token === token.token) === -1
       ) {
         tokens_ok.push(token);
       }
