@@ -68,6 +68,16 @@
 
           <div class="boxLogs" id="boxLogs_containers"><ul></ul></div>
         </div>
+        <div class="child-row">
+          <div style="display: flex; justify-content: space-between">
+            <h1>Hodometro:</h1>
+            <button id="run_odometers" onClick="startStopLogs('odometers')">
+              Stop Logs
+            </button>
+          </div>
+
+          <div class="boxLogs" id="boxLogs_odometers"><ul></ul></div>
+        </div>
       </div>
     </div>
     <script type="text/javascript">
@@ -80,6 +90,7 @@
         references: [],
         orders: [],
         generals: [],
+        odometers: [],
       };
       const runs = {
         containers: true,
@@ -87,6 +98,7 @@
         references: true,
         orders: true,
         generals: true,
+        odometers: true,
       };
 
       ipcRenderer.on("log", (event, arg) => {

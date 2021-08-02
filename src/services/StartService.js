@@ -6,6 +6,7 @@ const ReferencesService = require("./ReferencesService");
 const VehiclesService = require("./VehiclesService");
 const OrdersService = require("./OrdersService");
 const ContainersService = require("./ContainersService");
+// const OdometersService = require("./OdometersService");
 
 const api = require("../services/api");
 
@@ -18,8 +19,10 @@ class StartService {
     this.vehiclesService = new VehiclesService(window, db);
     this.ordersService = new OrdersService(window, db);
     this.containersService = new ContainersService(window, db);
+    // this.odometersService = new OdometersService(window, db);
 
     this.tokens = [];
+    this.unique_tokens = [];
     this.window = window;
   }
 
@@ -40,6 +43,13 @@ class StartService {
       this.tokens = await this.parametros.getTokens({
         filiais,
       });
+      this.tokens.forEach((token) => {
+        if (
+          this.unique_tokens.findIndex((t) => t.token === token.token) === -1
+        ) {
+          this.unique_tokens.push(token);
+        }
+      });
 
       if (this.tokens.length > 0) {
         if (!gps_aberto || ms >= 1000 * 300) {
@@ -47,14 +57,14 @@ class StartService {
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
 
-          await this.vehiclesService.execute({ tokens: this.tokens });
+          await this.vehiclesService.execute({ tokens: this.unique_tokens });
 
           await this.containersService.execute({
-            tokens: this.tokens,
+            tokens: this.unique_tokens,
             nfiliais: filiais,
           });
 
-          await this.referencesService.execute({ tokens: this.tokens });
+          await this.referencesService.execute({ tokens: this.unique_tokens });
 
           await this.ordersService.execute({ tokens: this.tokens });
 
@@ -63,9 +73,9 @@ class StartService {
           });
         } else {
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Outro integrador aberto. (${
+            `(${new Date().toLocaleString()}) - Já tem um integrador aberto (${
               gps_aberto ? gps_aberto.replace("|", " ") : ""
-            })`
+            }). Por favor aguarde até 5 minutos!`
           );
         }
       } else {
@@ -93,6 +103,7 @@ class StartService {
       );
 
       const idempresa = await this.dados.getNomeGeral();
+      const { filiais } = (await this.dados.getDados())[0];
 
       if (idempresa && idempresa.replace(/\D/g) % 1 === 0) {
         const response = await api
@@ -120,6 +131,7 @@ class StartService {
                 await this.parametros.setToken({
                   filial,
                   token,
+                  nfiliais: filiais,
                 });
 
                 concat_retornos.push(`${filial}:${token}`);
@@ -157,30 +169,30 @@ class StartService {
     }
   }
 
-  async forcaAtualizacao() {
-    let forca_atualizacao = false;
+  async checkUpdateSagi() {
+    let atualizacaoSagi = false;
 
     try {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Verifica forca atualização iniciado`
+        `(${new Date().toLocaleString()}) - Verifica atualização SAGI iniciado`
       );
 
-      forca_atualizacao = await this.dados.getForcaAtualizacao();
+      atualizacaoSagi = await this.dados.getForcaAtualizacao();
 
-      if (!forca_atualizacao) clearTimeout(this.timeoutRun);
+      if (!atualizacaoSagi) clearTimeout(this.timeoutRun);
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Verifica forca atualização finalizado`
+        `(${new Date().toLocaleString()}) - Verifica atualização SAGI finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro verifica forca atualização: ${
+        `(${new Date().toLocaleString()}) - Erro verifica atualização SAGI: ${
           err.message
         }`
       );
     }
 
-    return forca_atualizacao;
+    return atualizacaoSagi;
   }
 
   async getNomeGeral() {
@@ -194,14 +206,39 @@ class StartService {
     return;
   }
 
+  /* async odometer() {
+    try {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Iniciando serviço hodometro`,
+        "odometers"
+      );
+
+      await this.parametros.checkParameterOdometer();
+
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Serviço hodometro finalizado`,
+        "odometers"
+      );
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Erro serviço hodometro: ${
+          err.message
+        }`,
+        "odometers"
+      );
+    }
+
+    setTimeout(() => this.odometer(), 60000);
+  } */
+
   sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  writeLog(log) {
+  writeLog(log, type = "generals") {
     this.window.webContents.send("log", {
       log,
-      type: "generals",
+      type,
     });
   }
 }

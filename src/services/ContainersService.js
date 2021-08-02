@@ -21,7 +21,7 @@ class ContainersService {
   async execute({ tokens, nfiliais }) {
     try {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Iniciando servico tipo_caçambas/caçambas`
+        `(${new Date().toLocaleString()}) - Iniciando serviço tipo_caçambas/caçambas`
       );
 
       await Promise.all(
@@ -33,11 +33,11 @@ class ContainersService {
       );
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Servico tipo_caçambas/caçambas finalizado`
+        `(${new Date().toLocaleString()}) - Serviço tipo_caçambas/caçambas finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro servico tipo_caçambas/caçambas: ${
+        `(${new Date().toLocaleString()}) - Erro serviço tipo_caçambas/caçambas: ${
           err.message
         }`
       );

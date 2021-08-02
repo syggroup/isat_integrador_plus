@@ -152,7 +152,7 @@ async function verifySagiUpdate() {
     const check = await new StartService(
       global_config.window,
       global_config.db
-    ).forcaAtualizacao();
+    ).checkUpdateSagi();
 
     if (check) {
       new Notification({
@@ -180,8 +180,9 @@ async function verifySagiUpdate() {
 
 function runAllServices() {
   try {
-    //new StartService(global_config.window, db).getNomeGeral();
+    // new StartService(global_config.window, db).getNomeGeral();
     new StartService(global_config.window, global_config.db).start();
+    // new StartService(global_config.window, global_config.db).odometer();
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro serviço geral: ${

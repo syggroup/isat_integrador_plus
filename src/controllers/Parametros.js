@@ -6,25 +6,30 @@ class Parametros {
   }
 
   async getTokens(data) {
-    const tokens = await this.parametros_model.getTokens(data);
-    const tokens_ok = [];
-
-    tokens.forEach((token) => {
-      if (
-        token.usa === ".T." &&
-        token.token &&
-        tokens_ok.findIndex((t) => t.token === token.token) === -1
-      ) {
-        tokens_ok.push(token);
-      }
-    });
-
-    return tokens_ok;
+    return (await this.parametros_model.getTokens(data)).filter(
+      (token) => token.usa === ".T." && token.token
+    );
   }
 
   setToken(data) {
-    return this.parametros_model.setToken(data);
+    const { token, filial } = data;
+
+    if (filial !== "TODAS") {
+      return this.parametros_model.setToken(data);
+    } else {
+      return this.parametros_model.setAllTokens(data);
+    }
   }
+
+  /* async checkParameterOdometer() {
+    let parameter = await this.parametros_model.checkParameterOdometer();
+
+    if (parameter.length === 0) {
+      parameter = await this.parametros_model.createParameterOdometer();
+    }
+    console.log(parameter);
+    return parameter;
+  } */
 }
 
 module.exports = Parametros;

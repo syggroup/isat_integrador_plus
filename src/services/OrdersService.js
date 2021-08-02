@@ -17,7 +17,7 @@ class OrdersService {
   async execute({ tokens }) {
     try {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Iniciando servico ordens`
+        `(${new Date().toLocaleString()}) - Iniciando serviço ordens`
       );
 
       await Promise.all(
@@ -32,11 +32,11 @@ class OrdersService {
       await this.ordens.updateForDelete2();
 
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Servico ordens finalizado`
+        `(${new Date().toLocaleString()}) - Serviço ordens finalizado`
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro servico ordens: ${err.message}`
+        `(${new Date().toLocaleString()}) - Erro serviço ordens: ${err.message}`
       );
     } finally {
       await this.dados.setDados({
