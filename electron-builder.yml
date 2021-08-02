@@ -1,0 +1,18 @@
+appId: com.sagisolutions.sagi_x_isat
+publish:
+  provider: "github"
+  private: true
+  owner: "syggroup"
+  repo: "isat_integrador"
+win:
+  target: "nsis"
+  certificateFile: "C:/sagi/devel/doc/certificado_assina_binarios.pfx"
+  certificatePassword: "Vlp*253565"
+nsis:
+  deleteAppDataOnUninstall: true
+  oneClick: true
+  allowToChangeInstallationDirectory: false
+  runAfterFinish: false
+  include: "./build/installer.nsh"
+  createDesktopShortcut: false
+  createStartMenuShortcut: false

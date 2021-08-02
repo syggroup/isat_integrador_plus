@@ -2,7 +2,7 @@
   "name": "integrador_isat",
   "description": "Sistema para integração do Sagi com iSat",
   "author": "Sygecom Informática Ltda.",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "main": "src/main.js",
   "license": "MIT",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/syg-castilhos/isat_integrador.git"
+    "url": "https://github.com/syggroup/isat_integrador.git"
   },
   "devDependencies": {
     "electron": "^13.0.1",
