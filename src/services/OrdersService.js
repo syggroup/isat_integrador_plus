@@ -247,10 +247,16 @@ class OrdersService {
     }
   }
 
-  async updateStatusOrders({ token, filial, movimenta_cacamba }) {
+  async updateStatusOrders({
+    token,
+    filial,
+    movimenta_cacamba,
+    data_inicial_sinc_isat,
+  }) {
     try {
       const ordens = await this.ordens.getOrdensForUpdateStatus({
         filial,
+        data_inicial_sinc_isat,
       });
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Status de Ordens para sincronizar: ${

@@ -1,3 +1,5 @@
+const moment = require("moment");
+
 class OrdensModel {
   constructor(db) {
     this.db = db;
@@ -54,13 +56,18 @@ class OrdensModel {
     return result[1].rows;
   }
 
-  async getForUpdateStatus({ filial }) {
+  async getForUpdateStatus({ filial, data_inicial_sinc_isat }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`
       SELECT ordem
       FROM ordem as a
       WHERE a.datasai>=current_date-60
         AND a.datasai<=current_date+1
+        ${
+          data_inicial_sinc_isat
+            ? ` AND a.datasai >= '${data_inicial_sinc_isat}'`
+            : ""
+        }
         AND trim(a.placa)<>''
         AND a.ordem>0
         AND (a.empresa='TODAS' or a.empresa='${filial}')
