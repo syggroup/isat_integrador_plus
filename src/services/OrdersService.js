@@ -98,7 +98,7 @@ class OrdersService {
         }`
       );
       while (del_orders_in_isat.length > 0) {
-        const regs = upd_orders_in_isat.splice(0, 10);
+        const regs = del_orders_in_isat.splice(0, 10);
 
         const data = {
           registros: regs.map((reg) => {
@@ -130,14 +130,16 @@ class OrdersService {
 
           await Promise.all(
             retornos.map(async (retorno) => {
-              if (!retorno.erro) {
+              if (!retorno.erro || retorno.erro.indexOf("encontrada") !== -1) {
                 await this.ordens.delete({
                   sr_recno: retorno.registro.sr_recno,
                 });
               }
               concat_retornos.push(
                 `Ordem:${retorno.registro.ordem}:DELETE:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
+                  !retorno.erro || retorno.erro.indexOf("encontrada") !== -1
+                    ? "OK"
+                    : `ERRO:${retorno.erro}`
                 }`
               );
             })
@@ -292,6 +294,8 @@ class OrdersService {
             retornos.map(async (registro) => {
               const { ordem, situacao, checks, imprevistos, cacambas, kms } =
                 registro;
+
+              await this.ordens.retornoIsat({ ordem, situacao });
 
               if (checks.length > 0) {
                 await this.ordens.treatCheck({

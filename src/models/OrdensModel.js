@@ -274,6 +274,15 @@ class OrdensModel {
 
     return 0;
   }
+
+  async retornoIsat({ ordem, situacao }) {
+    await this.db.query("SET client_encoding TO 'UTF-8'");
+    await this.db.query(
+      `UPDATE ordem SET retorno_isat='${situacao}' WHERE ordem=${ordem}`
+    );
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    return 0;
+  }
 }
 
 module.exports = OrdensModel;

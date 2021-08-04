@@ -173,17 +173,17 @@ class StartService {
     let atualizacaoSagi = false;
 
     try {
-      // this.writeLog(
-      //  `(${new Date().toLocaleString()}) - Verifica atualização SAGI iniciado`
-      // );
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Verifica atualização SAGI iniciado`
+      );
 
       atualizacaoSagi = await this.dados.getForcaAtualizacao();
 
       if (!atualizacaoSagi) clearTimeout(this.timeoutRun);
 
-      // this.writeLog(
-      //  `(${new Date().toLocaleString()}) - Verifica atualização SAGI finalizado`
-      // );
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Verifica atualização SAGI finalizado`
+      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro verifica atualização SAGI: ${

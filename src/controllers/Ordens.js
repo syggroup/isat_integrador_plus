@@ -40,6 +40,10 @@ class Ordens {
   treatKm(data) {
     return this.ordens_model.treatKm(data);
   }
+
+  retornoIsat(data) {
+    return this.ordens_model.retornoIsat(data);
+  }
 }
 
 module.exports = Ordens;
