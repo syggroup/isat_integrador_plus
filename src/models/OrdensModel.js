@@ -276,11 +276,22 @@ class OrdensModel {
   }
 
   async retornoIsat({ ordem, situacao }) {
-    await this.db.query("SET client_encoding TO 'UTF-8'");
-    await this.db.query(
-      `UPDATE ordem SET retorno_isat='${situacao}' WHERE ordem=${ordem}`
-    );
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
+    const result_ordem = await this.db.query(`
+      SELECT retorno_isat FROM ordem WHERE ordem=${ordem}
+    `);
+
+    if (result_ordem[1].rowCount > 0) {
+      if (result_ordem[1].rows[0].retorno_isat !== situacao) {
+        await this.db.query("SET client_encoding TO 'UTF-8'");
+        await this.db.query(
+          `UPDATE ordem SET retorno_isat='${situacao}' WHERE ordem=${ordem}`
+        );
+        await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+      }
+    }
+
     return 0;
   }
 }

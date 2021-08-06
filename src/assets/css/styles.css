@@ -68,8 +68,8 @@ button:hover {
 button.btn-success {
   background: #4cd900;
 }
-button.btn-success:hover {
-  filter: brightness(90%);
+button.btn-secondary {
+  background: #575956;
 }
 
 label {
@@ -95,6 +95,7 @@ ul {
   flex-direction: column;
   max-height: 100%;
   overflow: auto;
+  font-size: 14px;
 }
 
 #notification {

@@ -16,18 +16,10 @@ class VehiclesService {
 
   async execute({ tokens }) {
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Iniciando serviço veículos`
-      );
-
       await Promise.all(
         tokens.map(({ token, filial }) => {
           return Promise.all([this.manageVehicles(token, filial)]);
         })
-      );
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Serviço veículos finalizado`
       );
     } catch (err) {
       this.writeLog(
@@ -71,13 +63,14 @@ class VehiclesService {
         await Promise.all(
           registros.map(async (registro) => {
             const count = await this.veiculos.update(registro);
-            this.writeLog(
-              `(${new Date().toLocaleString()} / ${filial}) - Veiculo:${
-                registro.placa
-              }:${
-                count > 0 ? "OK" : "ERRO:Placa não encontrada na base de dados"
-              }`
-            );
+            if (count === 0) {
+              this.writeLog(
+                `(${new Date().toLocaleString()} / ${filial}) - Veiculo:${
+                  registro.placa
+                }:ERRO:Placa não encontrada na base de dados
+                `
+              );
+            }
           })
         );
       }

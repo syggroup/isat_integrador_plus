@@ -20,20 +20,12 @@ class ContainersService {
 
   async execute({ tokens, nfiliais }) {
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Iniciando serviço tipo_caçambas/caçambas`
-      );
-
       await Promise.all(
         tokens.map((token) => this.manageTypeContainers(token))
       );
 
       await Promise.all(
         tokens.map((token) => this.manageContainers(token, nfiliais))
-      );
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Serviço tipo_caçambas/caçambas finalizado`
       );
     } catch (err) {
       this.writeLog(
@@ -102,12 +94,6 @@ class ContainersService {
           }
         });
 
-        this.writeLog(
-          `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçambas para deletar: ${
-            del_tipo_cacambas_in_isat.length
-          }`
-        );
-
         if (del_tipo_cacambas_in_isat.length > 0) {
           const response = await api
             .post(`/v2/${token}/tipo_cacamba/delete`, {
@@ -129,11 +115,13 @@ class ContainersService {
             const registros = response.data;
 
             registros.forEach((reg) => {
-              this.writeLog(
-                `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçamba:${
-                  reg.registro._id
-                }:DELETE:${reg.erro ? `ERRO:${reg.erro}` : "OK"}`
-              );
+              if (reg.erro) {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçamba:${
+                    reg.registro._id
+                  }:DELETE:ERRO:${reg.erro}`
+                );
+              }
             });
           }
         }
@@ -147,12 +135,6 @@ class ContainersService {
           });
         }
       });
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçambas para sincronizar: ${
-          upd_tipo_cacambas_in_isat.length
-        }`
-      );
 
       if (upd_tipo_cacambas_in_isat.length > 0) {
         const response = await api
@@ -174,8 +156,6 @@ class ContainersService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -184,26 +164,17 @@ class ContainersService {
                   type: "SAGI_TIPO_CONTAINER",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçamba:${
+                    retorno.registro._id
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Tipo_Caçamba:${retorno.registro._id}:${
-                  retorno.erro ? `ERRO:${retorno.erro}` : "OK"
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Tipo_Caçambas = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Tipo_Caçambas finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Tipo_Caçambas: ${
@@ -248,16 +219,13 @@ class ContainersService {
         registros.forEach((reg) => cacambas_isat.push(reg));
 
         cacambas_isat.forEach((ci) => {
-          if (cacambas_sagi.findIndex((cs) => cs.numero === ci.placa) === -1) {
+          if (
+            !ci.rastreada &&
+            cacambas_sagi.findIndex((cs) => cs.numero === ci.placa) === -1
+          ) {
             del_cacambas_in_isat.push({ placa: ci.placa });
           }
         });
-
-        this.writeLog(
-          `(${new Date().toLocaleString()} / ${filial}) - Caçambas para deletar: ${
-            del_cacambas_in_isat.length
-          }`
-        );
 
         if (del_cacambas_in_isat.length > 0) {
           const response = await api
@@ -280,11 +248,13 @@ class ContainersService {
             const registros = response.data;
 
             registros.forEach((reg) => {
-              this.writeLog(
-                `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
-                  reg.registro.placa
-                }:DELETE:${reg.erro ? `ERRO:${reg.erro}` : "OK"}`
-              );
+              if (reg.erro) {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
+                    reg.registro.placa
+                  }:DELETE:ERRO:${reg.erro}`
+                );
+              }
             });
           }
         }
@@ -295,15 +265,14 @@ class ContainersService {
           cacambas_isat.map(async (registro) => {
             const count = await this.cacambas.update(registro);
 
-            this.writeLog(
-              `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
-                registro.placa
-              }:${
-                count > 0
-                  ? "OK"
-                  : "ERRO:Caçamba não encontrada na base de dados"
-              }`
-            );
+            if (count === 0) {
+              this.writeLog(
+                `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
+                  registro.placa
+                }:ERRO:Caçamba não encontrada na base de dados
+                `
+              );
+            }
           })
         );
       }
@@ -321,12 +290,6 @@ class ContainersService {
           });
         }
       });
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Caçambas para sincronizar: ${
-          upd_cacambas_in_isat.length
-        }`
-      );
 
       if (upd_cacambas_in_isat.length > 0) {
         const response = await api
@@ -348,8 +311,6 @@ class ContainersService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -358,26 +319,17 @@ class ContainersService {
                   type: "CONTAINE",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
+                    retorno.registro.placa
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Caçamba:${retorno.registro.placa}:${
-                  retorno.erro ? `ERRO:${retorno.erro}` : "OK"
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Caçambas = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Caçambas finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo das Caçambas: ${

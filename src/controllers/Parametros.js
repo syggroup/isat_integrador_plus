@@ -12,13 +12,18 @@ class Parametros {
   }
 
   setToken(data) {
-    const { token, filial } = data;
+    const { filial } = data;
 
     if (filial !== "TODAS") {
       return this.parametros_model.setToken(data);
     } else {
       return this.parametros_model.setAllTokens(data);
     }
+  }
+
+  async checkParameterDateStartSyncIsat() {
+    await this.parametros_model.checkParameterDateStartSyncIsat();
+    return;
   }
 
   /* async checkParameterOdometer() {

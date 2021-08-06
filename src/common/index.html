@@ -9,7 +9,7 @@
       type="text/css"
     />
     <link rel="stylesheet" href="../assets/css/styles.css" />
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
   </head>
   <body>
     <div id="root">
@@ -17,9 +17,22 @@
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Gerais:</h1>
-            <button id="run_generals" onClick="startStopLogs('generals')">
-              Stop Logs
-            </button>
+            <div style="display: flex">
+              <button
+                style="margin-right: 5px"
+                id="run_generals"
+                onClick="startStopLogs('generals')"
+              >
+                Stop Logs
+              </button>
+              <button
+                class="btn-secondary"
+                id="clear_generals"
+                onClick="clearLogs('generals')"
+              >
+                Clear Logs
+              </button>
+            </div>
           </div>
 
           <div class="boxLogs" id="boxLogs_generals"><ul></ul></div>
@@ -27,9 +40,22 @@
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Veículos:</h1>
-            <button id="run_vehicles" onClick="startStopLogs('vehicles')">
-              Stop Logs
-            </button>
+            <div style="display: flex">
+              <button
+                style="margin-right: 5px"
+                id="run_vehicles"
+                onClick="startStopLogs('vehicles')"
+              >
+                Stop Logs
+              </button>
+              <button
+                class="btn-secondary"
+                id="clear_vehicles"
+                onClick="clearLogs('vehicles')"
+              >
+                Clear Logs
+              </button>
+            </div>
           </div>
 
           <div class="boxLogs" id="boxLogs_vehicles"><ul></ul></div>
@@ -39,9 +65,22 @@
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Referências:</h1>
-            <button id="run_references" onClick="startStopLogs('references')">
-              Stop Logs
-            </button>
+            <div style="display: flex">
+              <button
+                style="margin-right: 5px"
+                id="run_references"
+                onClick="startStopLogs('references')"
+              >
+                Stop Logs
+              </button>
+              <button
+                class="btn-secondary"
+                id="clear_references"
+                onClick="clearLogs('references')"
+              >
+                Clear Logs
+              </button>
+            </div>
           </div>
 
           <div class="boxLogs" id="boxLogs_references"><ul></ul></div>
@@ -49,9 +88,22 @@
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Ordens:</h1>
-            <button id="run_orders" onClick="startStopLogs('orders')">
-              Stop Logs
-            </button>
+            <div style="display: flex">
+              <button
+                style="margin-right: 5px"
+                id="run_orders"
+                onClick="startStopLogs('orders')"
+              >
+                Stop Logs
+              </button>
+              <button
+                class="btn-secondary"
+                id="clear_orders"
+                onClick="clearLogs('orders')"
+              >
+                Clear Logs
+              </button>
+            </div>
           </div>
 
           <div class="boxLogs" id="boxLogs_orders"><ul></ul></div>
@@ -61,9 +113,22 @@
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Caçambas/Tipos:</h1>
-            <button id="run_containers" onClick="startStopLogs('containers')">
-              Stop Logs
-            </button>
+            <div style="display: flex">
+              <button
+                style="margin-right: 5px"
+                id="run_containers"
+                onClick="startStopLogs('containers')"
+              >
+                Stop Logs
+              </button>
+              <button
+                class="btn-secondary"
+                id="clear_containers"
+                onClick="clearLogs('containers')"
+              >
+                Clear Logs
+              </button>
+            </div>
           </div>
 
           <div class="boxLogs" id="boxLogs_containers"><ul></ul></div>
@@ -71,9 +136,22 @@
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
             <h1>Hodometro:</h1>
-            <button id="run_odometers" onClick="startStopLogs('odometers')">
-              Stop Logs
-            </button>
+            <div style="display: flex">
+              <button
+                style="margin-right: 5px"
+                id="run_odometers"
+                onClick="startStopLogs('odometers')"
+              >
+                Stop Logs
+              </button>
+              <button
+                class="btn-secondary"
+                id="clear_odometers"
+                onClick="clearLogs('odometers')"
+              >
+                Clear Logs
+              </button>
+            </div>
           </div>
 
           <div class="boxLogs" id="boxLogs_odometers"><ul></ul></div>
@@ -99,6 +177,10 @@
         orders: true,
         generals: true,
         odometers: true,
+      };
+
+      const globals = {
+        nomegeral: null,
       };
 
       ipcRenderer.on("log", (event, arg) => {
@@ -203,47 +285,61 @@
         button.classList.toggle("btn-success");
       }
 
-      /* const socket = io("https://websocket.sagisolutions.com:3000", {
-        transports: ["websocket"],
-      });
+      function clearLogs(type) {
+        const _logs = logs[type].splice(0, logs[type].length);
 
-      ipcRenderer.on("nomegeral", (event, arg) => {
-        socket.emit("join", [arg.nomeragal]);
-      });
+        _logs.forEach((log) => document.getElementById(log.id).remove());
+      }
 
-      socket.on("event", (event) => {
-        const notification = {
-          title: null,
-          body: null,
-        };
+      /* (async function getNomeGeralAndConnectToWs() {
+        globals.nomegeral = await ipcRenderer.invoke("getNomeGeral");
 
-        if (
-          event.type == "GTIGN" ||
-          event.type == "GTFRI" ||
-          event.type == "ONSTOP" ||
-          event.type == "GTMPF" ||
-          event.type == "OUTSIDETHEFENCE" ||
-          event.type == "INSIDETHEFENCE"
-        ) {
-          notification.title = event.placa + " - " + event.title;
-          notification.body = "Data/Hora: " + event.datahora;
-        }
+        if (!globals.nomegeral) {
+          setTimeout(() => getNomeGeralAndConnectToWs(), 30000);
+        } else {
+          const socket = io("https://websocket.sagisolutions.com:3000", {
+            transports: ["websocket"],
+          });
 
-        if (event.type == "GTHBM") {
-          notification.title = event.placa + " - " + event.title;
-          notification.body =
-            "Data/Hora: " +
-            event.datahora +
-            " e Velocidade: " +
-            event.speed +
-            " Km/h";
-        }
+          socket.on("connect", () => {
+            socket.emit("join", [globals.nomegeral]);
+          });
 
-        new Notification(notification.title, {
-          body: notification.body,
-          icon: "../assets/image/logo.png",
-        });
-      }); */
+          /* socket.on("event", (event) => {
+            const notification = {
+              title: null,
+              body: null,
+            };
+
+            if (
+              event.type == "GTIGN" ||
+              event.type == "GTFRI" ||
+              event.type == "ONSTOP" ||
+              event.type == "GTMPF" ||
+              event.type == "OUTSIDETHEFENCE" ||
+              event.type == "INSIDETHEFENCE"
+            ) {
+              notification.title = event.placa + " - " + event.title;
+              notification.body = "Data/Hora: " + event.datahora;
+            }
+
+            if (event.type == "GTHBM") {
+              notification.title = event.placa + " - " + event.title;
+              notification.body =
+                "Data/Hora: " +
+                event.datahora +
+                " e Velocidade: " +
+                event.speed +
+                " Km/h";
+            }
+
+            //new Notification(notification.title, {
+            //  body: notification.body,
+            //  icon: "../assets/image/logo.png",
+            //});
+          }); */
+      /* }
+      })(); */
     </script>
 
     <div id="notification" class="hidden">

@@ -6,7 +6,6 @@ const ReferencesService = require("./ReferencesService");
 const VehiclesService = require("./VehiclesService");
 const OrdersService = require("./OrdersService");
 const ContainersService = require("./ContainersService");
-// const OdometersService = require("./OdometersService");
 
 const api = require("../services/api");
 
@@ -19,7 +18,6 @@ class StartService {
     this.vehiclesService = new VehiclesService(window, db);
     this.ordersService = new OrdersService(window, db);
     this.containersService = new ContainersService(window, db);
-    // this.odometersService = new OdometersService(window, db);
 
     this.tokens = [];
     this.unique_tokens = [];
@@ -28,10 +26,6 @@ class StartService {
 
   async start() {
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Serviço geral iniciado`
-      );
-
       const { gps_aberto, filiais } = (await this.dados.getDados())[0];
 
       const date_time = gps_aberto ? gps_aberto.replace("|", " ") : moment();
@@ -83,10 +77,6 @@ class StartService {
           `(${new Date().toLocaleString()}) - Sem tokens para sincronizar`
         );
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Serviço geral finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço geral: ${err.message}`
@@ -98,10 +88,6 @@ class StartService {
 
   async verificaIntegracaoIsat() {
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Verifica integração iSat iniciado`
-      );
-
       const idempresa = await this.dados.getNomeGeral();
       const { filiais } = (await this.dados.getDados())[0];
 
@@ -142,25 +128,29 @@ class StartService {
               }
             })
           );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()}) - Integração = ${concat_retornos.join(
-              ", "
-            )}`
-          );
         }
       } else {
         this.writeLog(
           `(${new Date().toLocaleString()}) - Idempresa inválido: (${idempresa})`
         );
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Verifica integração iSat finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro verifica integração iSat: ${
+          err.message
+        }`
+      );
+    } finally {
+      return true;
+    }
+  }
+
+  async verificaDataInicialSincIsat() {
+    try {
+      await this.parametros.checkParameterDateStartSyncIsat();
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Erro verifica data inicial sinc iSat: ${
           err.message
         }`
       );
@@ -173,17 +163,9 @@ class StartService {
     let atualizacaoSagi = false;
 
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Verifica atualização SAGI iniciado`
-      );
-
       atualizacaoSagi = await this.dados.getForcaAtualizacao();
 
       if (!atualizacaoSagi) clearTimeout(this.timeoutRun);
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Verifica atualização SAGI finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro verifica atualização SAGI: ${
@@ -197,13 +179,9 @@ class StartService {
 
   async getNomeGeral() {
     try {
-      const nomegeral = await this.dados.getNomeGeral();
-
-      this.window.webContents.send("nomegeral", {
-        nomegeral,
-      });
+      return await this.dados.getNomeGeral();
     } catch (err) {}
-    return;
+    return 0;
   }
 
   /* async odometer() {

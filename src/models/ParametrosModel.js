@@ -140,6 +140,30 @@ class ParametrosModel {
     return;
   }
 
+  async checkParameterDateStartSyncIsat() {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
+    const result = await this.db.query(`
+      SELECT parametro_valor, parametro_empresa
+      FROM sagi_parametros
+      WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT'
+    `);
+
+    await Promise.all(
+      result[1].rows.map(async (parameter) => {
+        if (!parameter.parametro_valor) {
+          await this.db.query(`
+          UPDATE sagi_parametros
+          SET parametro_valor = to_char(current_date - 7, 'DD/MM/YYYY')
+          WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = '${parameter.parametro_empresa}'
+        `);
+        }
+      })
+    );
+
+    return;
+  }
+
   /* async checkParameterOdometer() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`

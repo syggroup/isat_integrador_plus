@@ -16,10 +16,6 @@ class OrdersService {
 
   async execute({ tokens }) {
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Iniciando serviço ordens`
-      );
-
       await Promise.all(
         tokens.map((token) => {
           return Promise.all([
@@ -30,10 +26,6 @@ class OrdersService {
       );
 
       await this.ordens.updateForDelete2();
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Serviço ordens finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço ordens: ${err.message}`
@@ -92,11 +84,6 @@ class OrdersService {
         upd_orders_in_isat.splice(ruoi, 1)
       );
 
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Ordens para deletar: ${
-          del_orders_in_isat.length
-        }`
-      );
       while (del_orders_in_isat.length > 0) {
         const regs = del_orders_in_isat.splice(0, 10);
 
@@ -126,29 +113,20 @@ class OrdersService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro || retorno.erro.indexOf("encontrada") !== -1) {
                 await this.ordens.delete({
                   sr_recno: retorno.registro.sr_recno,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Ordem:${
+                    retorno.registro.ordem
+                  }:DELETE:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Ordem:${retorno.registro.ordem}:DELETE:${
-                  !retorno.erro || retorno.erro.indexOf("encontrada") !== -1
-                    ? "OK"
-                    : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Ordens para deletar = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -158,11 +136,6 @@ class OrdersService {
         await this.sleep(500);
       }
 
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Ordens para sincronizar: ${
-          upd_orders_in_isat.length
-        }`
-      );
       while (upd_orders_in_isat.length > 0) {
         const regs = upd_orders_in_isat.splice(0, 10);
 
@@ -203,27 +176,20 @@ class OrdersService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
                 await this.ordens.delete({
                   sr_recno: retorno.registro.sr_recno,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Ordem:${
+                    retorno.registro.ordem
+                  }:INSERT/UPDATE:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Ordem:${retorno.registro.ordem}:INSERT/UPDATE:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Ordens para sincronizar = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -232,10 +198,6 @@ class OrdersService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Ordens finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo das Ordens: ${
@@ -260,11 +222,6 @@ class OrdersService {
         filial,
         data_inicial_sinc_isat,
       });
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Status de Ordens para sincronizar: ${
-          ordens.length
-        }`
-      );
 
       while (ordens.length > 0) {
         const regs = ordens.splice(0, 10);
@@ -287,8 +244,6 @@ class OrdersService {
 
         if (response && response.status === 200) {
           const retornos = response.data;
-
-          const concat_retornos = [];
 
           await Promise.all(
             retornos.map(async (registro) => {
@@ -351,14 +306,12 @@ class OrdersService {
                 });
               }
 
-              concat_retornos.push(`Status da Ordem:${ordem}:${situacao}`);
+              if (situacao.indexOf("encontrada") !== -1) {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Status da Ordem:${ordem}:${situacao}`
+                );
+              }
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Status das Ordens = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -367,10 +320,6 @@ class OrdersService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Status das Ordens finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Status das Ordens: ${

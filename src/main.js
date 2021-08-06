@@ -24,6 +24,7 @@ const global_config = {
   iconpath: path.join(__dirname, "assets", "image", "logo.png"),
   db: null,
   verifica_integracao_isat: false,
+  verifica_data_inicial_sinc_isat: false,
 };
 
 function createIconAndTray() {
@@ -147,6 +148,29 @@ async function verifyIntegrationIsat() {
   }
 }
 
+async function verifyDateStartSyncIsat() {
+  try {
+    if (!global_config.verifica_data_inicial_sinc_isat) {
+      global_config.verifica_data_inicial_sinc_isat = true;
+
+      return await new StartService(
+        global_config.window,
+        global_config.db
+      ).verificaDataInicialSincIsat();
+    }
+
+    return true;
+  } catch (err) {
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro verifica data inicial sinc iSat: ${
+        err.message
+      }`,
+      type: "generals",
+    });
+    return false;
+  }
+}
+
 async function verifySagiUpdate() {
   try {
     const check = await new StartService(
@@ -180,7 +204,6 @@ async function verifySagiUpdate() {
 
 function runAllServices() {
   try {
-    // new StartService(global_config.window, db).getNomeGeral();
     new StartService(global_config.window, global_config.db).start();
     // new StartService(global_config.window, global_config.db).odometer();
   } catch (err) {
@@ -197,6 +220,8 @@ async function startService() {
   try {
     if (await setGlobalConnectionDatabase()) {
       await verifyIntegrationIsat();
+
+      await verifyDateStartSyncIsat();
 
       runAllServices();
 
@@ -290,6 +315,23 @@ autoUpdater.on("update-downloaded", () => {
   global_config.window.webContents.send("update_downloaded");
 });
 
-ipcMain.on("restart_app", () => {
+ipcMain.on("restart_app", async () => {
+  try {
+    if (global_config.db) {
+      await global_config.db.close();
+    }
+  } catch (err) {}
+
   autoUpdater.quitAndInstall(true, false);
+});
+
+ipcMain.handle("getNomeGeral", async () => {
+  if (global_config.db) {
+    return await new StartService(
+      global_config.window,
+      global_config.db
+    ).getNomeGeral();
+  } else {
+    return 0;
+  }
 });

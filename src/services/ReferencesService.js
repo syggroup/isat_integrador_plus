@@ -26,10 +26,6 @@ class ReferencesService {
 
   async execute({ tokens }) {
     try {
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Iniciando serviço referências`
-      );
-
       await Promise.all(
         tokens.map(({ token, filial }) => {
           return Promise.all([
@@ -40,10 +36,6 @@ class ReferencesService {
             this.manageDrivers(token, filial),
           ]);
         })
-      );
-
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Serviço referências finalizado`
       );
     } catch (err) {
       this.writeLog(
@@ -79,11 +71,6 @@ class ReferencesService {
       });
 
       const fornecedores = await this.fornecedores.getFornecedores({ token });
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Fornecedores para sincronizar: ${
-          fornecedores.length
-        }`
-      );
 
       while (fornecedores.length > 0) {
         const regs = fornecedores.splice(0, 500);
@@ -129,8 +116,6 @@ class ReferencesService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -142,19 +127,14 @@ class ReferencesService {
                   type: "FORNECEDOR",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Fornecedor:${
+                    retorno.registro.codigo
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Fornecedor:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Fornecedores = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -163,10 +143,6 @@ class ReferencesService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Fornecedores finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Fornecedores: ${
@@ -183,11 +159,6 @@ class ReferencesService {
   async manageAddressSuppliers(token, filial) {
     try {
       const enderecos = await this.forEnde.getForsEndes({ token });
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Ende de Fornecedores para sincronizar: ${
-          enderecos.length
-        }`
-      );
 
       while (enderecos.length > 0) {
         const regs = enderecos.splice(0, 500);
@@ -233,8 +204,6 @@ class ReferencesService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -246,19 +215,14 @@ class ReferencesService {
                   type: "FORNECEDOR",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Ende de Fornecedor:${
+                    retorno.registro.codigo
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Ende de Fornecedor:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Ende de Fornecedores = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -267,10 +231,6 @@ class ReferencesService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Ende de Fornecedores finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Ende de Fornecedores: ${
@@ -294,11 +254,6 @@ class ReferencesService {
       });
 
       const clientes = await this.clientes.getClientes({ token });
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Clientes para sincronizar: ${
-          clientes.length
-        }`
-      );
 
       while (clientes.length > 0) {
         const regs = clientes.splice(0, 500);
@@ -344,8 +299,6 @@ class ReferencesService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -357,19 +310,14 @@ class ReferencesService {
                   type: "CLIENTE",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Cliente:${
+                    retorno.registro.codigo
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Cliente:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Clientes = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -378,10 +326,6 @@ class ReferencesService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Clientes finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Clientes: ${
@@ -405,11 +349,6 @@ class ReferencesService {
       });
 
       const concorrentes = await this.concorrentes.getConcorrentes({ token });
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Concorrentes para sincronizar: ${
-          concorrentes.length
-        }`
-      );
 
       while (concorrentes.length > 0) {
         const regs = concorrentes.splice(0, 500);
@@ -455,8 +394,6 @@ class ReferencesService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -468,19 +405,14 @@ class ReferencesService {
                   type: "CONCORRENTE",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Concorrente:${
+                    retorno.registro.codigo
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Concorrente:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Concorrentes = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -489,10 +421,6 @@ class ReferencesService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Concorrentes finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Concorrentes: ${
@@ -516,11 +444,6 @@ class ReferencesService {
       });
 
       const motoristas = await this.motoristas.getMotoristas({ token });
-      this.writeLog(
-        `(${new Date().toLocaleString()}) - Motoristas para sincronizar: ${
-          motoristas.length
-        }`
-      );
 
       while (motoristas.length > 0) {
         const regs = motoristas.splice(0, 500);
@@ -570,8 +493,6 @@ class ReferencesService {
         if (response && response.status === 200) {
           const retornos = response.data;
 
-          const concat_retornos = [];
-
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
@@ -583,19 +504,14 @@ class ReferencesService {
                   type: "MOTORISTA",
                   token,
                 });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Motorista:${
+                    retorno.registro.codigo
+                  }:ERRO:${retorno.erro}`
+                );
               }
-              concat_retornos.push(
-                `Motorista:${retorno.registro.codigo}:${
-                  !retorno.erro ? "OK" : `ERRO:${retorno.erro}`
-                }`
-              );
             })
-          );
-
-          this.writeLog(
-            `(${new Date().toLocaleString()} / ${filial}) - Motoristas = ${concat_retornos.join(
-              ", "
-            )}`
           );
         }
 
@@ -604,10 +520,6 @@ class ReferencesService {
         });
         await this.sleep(500);
       }
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Sincronismo Motoristas finalizado`
-      );
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Motoristas: ${
