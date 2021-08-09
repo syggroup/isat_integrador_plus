@@ -8,10 +8,6 @@ class SagiIsatSinc {
   insert(data) {
     return this.sagiIsatSinc_model.insert(data);
   }
-
-  delete(data) {
-    return this.sagiIsatSinc_model.delete(data);
-  }
 }
 
 module.exports = SagiIsatSinc;

@@ -5,10 +5,6 @@ class Motoristas {
     this.motoristas_model = new MotoristasModel(db);
   }
 
-  setIsatSinc(data) {
-    return this.motoristas_model.setIsatSinc(data);
-  }
-
   getMotoristas(data) {
     return this.motoristas_model.get(data);
   }

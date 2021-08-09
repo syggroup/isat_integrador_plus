@@ -3,14 +3,6 @@ class ConcorrentesModel {
     this.db = db;
   }
 
-  async setIsatSinc({ codigo }) {
-    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
-    const result = await this.db.query(
-      `UPDATE cag_conco SET isat_sinc = true where codcon = ${codigo}`
-    );
-    return result[1].rows;
-  }
-
   async get({ token }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`

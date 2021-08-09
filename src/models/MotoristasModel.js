@@ -3,14 +3,6 @@ class MotoristasModel {
     this.db = db;
   }
 
-  async setIsatSinc({ codigo }) {
-    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
-    const result = await this.db.query(
-      `UPDATE mot SET isat_sinc = true where codmot = ${codigo}`
-    );
-    return result[1].rows;
-  }
-
   async get({ token }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`

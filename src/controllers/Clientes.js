@@ -5,10 +5,6 @@ class Clientes {
     this.clientes_model = new ClientesModel(db);
   }
 
-  setIsatSinc(data) {
-    return this.clientes_model.setIsatSinc(data);
-  }
-
   getClientes(data) {
     return this.clientes_model.get(data);
   }

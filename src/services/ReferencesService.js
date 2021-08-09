@@ -63,13 +63,6 @@ class ReferencesService {
 
   async manageSuppliers(token, filial) {
     try {
-      await this.sagiIsatSinc.delete({
-        type: "FORNECEDOR",
-        token,
-        column: "codfor",
-        table: "cag_for",
-      });
-
       const fornecedores = await this.fornecedores.getFornecedores({ token });
 
       while (fornecedores.length > 0) {
@@ -119,9 +112,6 @@ class ReferencesService {
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
-                await this.fornecedores.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
                 await this.sagiIsatSinc.insert({
                   codigo: retorno.registro.codigo,
                   type: "FORNECEDOR",
@@ -207,9 +197,6 @@ class ReferencesService {
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
-                await this.fornecedores.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
                 await this.sagiIsatSinc.insert({
                   codigo: retorno.registro.codigo,
                   type: "FORNECEDOR",
@@ -246,13 +233,6 @@ class ReferencesService {
 
   async manageCustomers(token, filial) {
     try {
-      await this.sagiIsatSinc.delete({
-        type: "CLIENTE",
-        token,
-        column: "codcli",
-        table: "cag_cli",
-      });
-
       const clientes = await this.clientes.getClientes({ token });
 
       while (clientes.length > 0) {
@@ -302,9 +282,6 @@ class ReferencesService {
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
-                await this.clientes.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
                 await this.sagiIsatSinc.insert({
                   codigo: retorno.registro.codigo,
                   type: "CLIENTE",
@@ -341,13 +318,6 @@ class ReferencesService {
 
   async manageCompetitors(token, filial) {
     try {
-      await this.sagiIsatSinc.delete({
-        type: "CONCORRENTE",
-        token,
-        column: "codcon",
-        table: "cag_conco",
-      });
-
       const concorrentes = await this.concorrentes.getConcorrentes({ token });
 
       while (concorrentes.length > 0) {
@@ -397,9 +367,6 @@ class ReferencesService {
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
-                await this.concorrentes.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
                 await this.sagiIsatSinc.insert({
                   codigo: retorno.registro.codigo,
                   type: "CONCORRENTE",
@@ -436,13 +403,6 @@ class ReferencesService {
 
   async manageDrivers(token, filial) {
     try {
-      await this.sagiIsatSinc.delete({
-        type: "MOTORISTA",
-        token,
-        column: "codmot",
-        table: "mot",
-      });
-
       const motoristas = await this.motoristas.getMotoristas({ token });
 
       while (motoristas.length > 0) {
@@ -496,9 +456,6 @@ class ReferencesService {
           await Promise.all(
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
-                await this.motoristas.setIsatSinc({
-                  codigo: retorno.registro.codigo,
-                });
                 await this.sagiIsatSinc.insert({
                   codigo: retorno.registro.codigo,
                   type: "MOTORISTA",
