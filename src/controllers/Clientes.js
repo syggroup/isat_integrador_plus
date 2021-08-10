@@ -6,6 +6,10 @@ class Clientes {
   }
 
   getClientes(data) {
+    return this.clientes_model.getAll(data);
+  }
+
+  getCliente(data) {
     return this.clientes_model.get(data);
   }
 }

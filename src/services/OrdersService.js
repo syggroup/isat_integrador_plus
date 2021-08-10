@@ -2,6 +2,10 @@ const moment = require("moment");
 
 const Dados = require("../controllers/Dados");
 const Ordens = require("../controllers/Ordens");
+const SagiIsatSinc = require("../controllers/SagiIsatSinc");
+const Fornecedores = require("../controllers/Fornecedores");
+const ForEnde = require("../controllers/ForEnde");
+const Clientes = require("../controllers/Clientes");
 
 const api = require("../services/api");
 
@@ -10,6 +14,11 @@ class OrdersService {
     this.dados = new Dados(db);
 
     this.ordens = new Ordens(db);
+
+    this.sagiIsatSinc = new SagiIsatSinc(db);
+    this.fornecedores = new Fornecedores(db);
+    this.forEnde = new ForEnde(db);
+    this.clientes = new Clientes(db);
 
     this.window = window;
   }
@@ -178,9 +187,20 @@ class OrdersService {
 
           await Promise.all(
             retornos.map(async (retorno) => {
-              if (!retorno.erro) {
+              if (
+                !retorno.erro ||
+                (retorno.erro &&
+                  retorno.erro.indexOf("laca") !== -1 &&
+                  retorno.erro.indexOf("encontrada") !== -1)
+              ) {
                 await this.ordens.delete({
                   sr_recno: retorno.registro.sr_recno,
+                });
+              } else if (retorno.erro && retorno.erro.indexOf("ncia") !== -1) {
+                await this.checkRefAndTrySendOrderAgain({
+                  ...retorno.registro,
+                  token,
+                  filial,
                 });
               } else {
                 this.writeLog(
@@ -208,6 +228,182 @@ class OrdersService {
       await this.dados.setDados({
         datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
       });
+    }
+  }
+
+  async checkRefAndTrySendOrderAgain({
+    ordem,
+    tipo,
+    placa,
+    datasai,
+    codigo,
+    sequencia,
+    horasai,
+    status,
+    num_col,
+    cnh,
+    filial: filial_ordem,
+    observacoes,
+    sr_recno,
+    token,
+    filial,
+  }) {
+    try {
+      let referencia = [];
+
+      if (tipo === "CLIENTE") {
+        referencia = await this.clientes.getCliente({
+          codigo: parseInt(codigo, 10),
+        });
+      } else {
+        if (parseInt(num_col, 10)) {
+          referencia = await this.forEnde.getForEnde({
+            codigo: parseInt(codigo, 10),
+            num_col: parseInt(num_col, 10),
+          });
+        } else {
+          referencia = await this.fornecedores.getFornecedor({
+            codigo: parseInt(codigo, 10),
+          });
+        }
+      }
+
+      if (referencia.length > 0) {
+        const data = {
+          registros: [
+            {
+              tipo: referencia[0].tipo,
+              nome: referencia[0].nome,
+              id_cidade: parseInt(referencia[0].id_cidade, 10),
+              latitude: parseFloat(referencia[0].latitude),
+              longitude: parseFloat(referencia[0].longitude),
+              codigo: parseInt(referencia[0].codigo, 10),
+              status: referencia[0].status,
+              ...(referencia[0].endereco && {
+                endereco: referencia[0].endereco,
+              }),
+              ...(referencia[0].bairro && { bairro: referencia[0].bairro }),
+              ...(referencia[0].numero && { numero: referencia[0].numero }),
+              ...(referencia[0].complemento && {
+                complemento: referencia[0].complemento,
+              }),
+              ...(referencia[0].cep && {
+                cep: parseInt(referencia[0].cep, 10),
+              }),
+              ...(referencia[0].data_nasc && {
+                data_nasc: referencia[0].data_nasc,
+              }),
+              ...(referencia[0].email && { email: referencia[0].email }),
+              ...(referencia[0].num_col && {
+                num_col: parseInt(referencia[0].num_col, 10),
+              }),
+              ...(referencia[0].tel1 && { tel1: referencia[0].tel1 }),
+              ...(referencia[0].tel2 && { tel2: referencia[0].tel2 }),
+            },
+          ],
+        };
+
+        const response = await api
+          .post(`/v2/${token}/referencia`, data)
+          .catch((err) =>
+            this.writeLog(
+              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Referência da Ordem: ${
+                err.response
+                  ? `${err.response.status} - ${JSON.stringify(
+                      err.response.data
+                    )}`
+                  : err.message
+              }`
+            )
+          );
+
+        if (response && response.status === 200) {
+          const retorno_ref = response.data[0];
+
+          if (!retorno_ref.erro) {
+            await this.sagiIsatSinc.insert({
+              codigo: parseInt(referencia[0].codigo, 10),
+              type: referencia[0].tipo,
+              token,
+            });
+
+            const data = {
+              registros: [
+                {
+                  ordem,
+                  tipo,
+                  placa,
+                  datasai,
+                  codigo,
+                  sequencia,
+                  horasai,
+                  status,
+                  num_col,
+                  cnh,
+                  filial: filial_ordem,
+                  observacoes,
+                  sr_recno,
+                },
+              ],
+            };
+
+            const response = await api
+              .post(`/v2/${token}/ordem_rastreio`, data)
+              .catch((err) =>
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat insert/update Ordens(UPDATE): ${
+                    err.response
+                      ? `${err.response.status} - ${JSON.stringify(
+                          err.response.data
+                        )}`
+                      : err.message
+                  }`
+                )
+              );
+
+            if (response && response.status === 200) {
+              const retorno_ord = response.data[0];
+
+              if (
+                !retorno_ord.erro ||
+                retorno_ord.erro.indexOf("ncia") === -1
+              ) {
+                await this.ordens.delete({
+                  sr_recno: retorno_ord.registro.sr_recno,
+                });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Ordem:${
+                    retorno_ord.registro.ordem
+                  }:INSERT/UPDATE:ERRO:${retorno_ord.erro}`
+                );
+              }
+            }
+          } else {
+            await this.ordens.delete({
+              sr_recno,
+            });
+          }
+        } else {
+          await this.ordens.delete({
+            sr_recno,
+          });
+        }
+      } else {
+        await this.ordens.delete({
+          sr_recno,
+        });
+      }
+    } catch (err) {
+      await this.ordens.delete({
+        sr_recno,
+      });
+
+      this.writeLog(
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo das Ordens: ${
+          err.message
+        }`
+      );
     }
   }
 

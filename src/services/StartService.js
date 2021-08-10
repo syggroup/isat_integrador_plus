@@ -1,4 +1,5 @@
 const moment = require("moment");
+const { hostname, userInfo } = require("os");
 
 const Dados = require("../controllers/Dados");
 const Parametros = require("../controllers/Parametros");
@@ -50,6 +51,8 @@ class StartService {
           await this.dados.setDados({
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
+
+          await this.sendMachineDataToIsat();
 
           await this.vehiclesService.execute({ tokens: this.unique_tokens });
 
@@ -208,6 +211,40 @@ class StartService {
 
     setTimeout(() => this.odometer(), 60000);
   } */
+
+  async sendMachineDataToIsat() {
+    try {
+      const idempresa = await this.dados.getNomeGeral();
+      const datetime = moment().format("YYYY-MM-DD HH:mm:ss");
+
+      await api
+        .post("/v2/bd9e6bc2c760d35bd8a70c818cece692/integrador", {
+          idempresa,
+          username: userInfo().username,
+          hostname: hostname(),
+          date: datetime.split(" ")[0],
+          time: datetime.split(" ")[1],
+        })
+        .catch((err) =>
+          this.writeLog(
+            `(${new Date().toLocaleString()}) - Erro requisição Api Isat dados da máquina: ${
+              err.response
+                ? `${err.response.status} - ${JSON.stringify(
+                    err.response.data
+                  )}`
+                : err.message
+            }`
+          )
+        );
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Erro enivar dados da máquina para o iSat: ${
+          err.message
+        }`,
+        "generals"
+      );
+    }
+  }
 
   sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));

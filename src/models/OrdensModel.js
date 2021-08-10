@@ -29,6 +29,7 @@ class OrdensModel {
       WHERE a.ordem>0
         and (a.acao='DELETE' or (a.acao<>'DELETE' and b.codmot>0 and d.ativo_rastreador='ISAT'))
         and case when a.acao<>'DELETE' then (b.empresa='${filial}' or b.empresa='TODAS') else true end
+        and length(regexp_replace(c.numcnh, '\D', '', 'g')) = 11
         ${
           data_inicial_sinc_isat
             ? ` AND b.datasai >= '${data_inicial_sinc_isat}'`
@@ -276,7 +277,7 @@ class OrdensModel {
   }
 
   async retornoIsat({ ordem, situacao }) {
-    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    await this.db.query("SET client_encoding TO 'UTF-8'");
 
     const result_ordem = await this.db.query(`
       SELECT retorno_isat FROM ordem WHERE ordem=${ordem}
@@ -284,13 +285,13 @@ class OrdensModel {
 
     if (result_ordem[1].rowCount > 0) {
       if (result_ordem[1].rows[0].retorno_isat !== situacao) {
-        await this.db.query("SET client_encoding TO 'UTF-8'");
         await this.db.query(
           `UPDATE ordem SET retorno_isat='${situacao}' WHERE ordem=${ordem}`
         );
-        await this.db.query("SET client_encoding TO 'SQL_ASCII'");
       }
     }
+
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     return 0;
   }

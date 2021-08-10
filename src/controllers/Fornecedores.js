@@ -6,6 +6,10 @@ class Fornecedores {
   }
 
   getFornecedores(data) {
+    return this.fornecedores_model.getAll(data);
+  }
+
+  getFornecedor(data) {
     return this.fornecedores_model.get(data);
   }
 }

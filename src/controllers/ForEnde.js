@@ -6,6 +6,10 @@ class ForEnde {
   }
 
   getForsEndes(data) {
+    return this.forEnde_model.getAll(data);
+  }
+
+  getForEnde(data) {
     return this.forEnde_model.get(data);
   }
 }

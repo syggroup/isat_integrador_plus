@@ -150,14 +150,33 @@ class ParametrosModel {
     `);
 
     await Promise.all(
-      result[1].rows.map(async (parameter) => {
-        if (!parameter.parametro_valor) {
+      result[1].rows.map(async ({ parametro_valor, parametro_empresa }) => {
+        if (!parametro_valor) {
           await this.db.query(`
-          UPDATE sagi_parametros
-          SET parametro_valor = to_char(current_date - 7, 'DD/MM/YYYY')
-          WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = '${parameter.parametro_empresa}'
-        `);
+            UPDATE sagi_parametros
+            SET parametro_valor = to_char(current_date - 7, 'DD/MM/YYYY')
+            WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = '${parametro_empresa}'
+          `);
         }
+      })
+    );
+
+    const result_2 = await this.db.query(`
+      SELECT parametro_valor, parametro_empresa
+      FROM sagi_parametros
+      WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT'
+    `);
+
+    await Promise.all(
+      result_2[1].rows.map(async ({ parametro_valor, parametro_empresa }) => {
+        await this.db.query(`
+          delete from isat_ordem_temp where ordem in(
+            select distinct t.ordem
+            from isat_ordem_temp t
+            left join ordem o on o.ordem = t.ordem and t.ordem > 0
+            where o.empresa in('${parametro_empresa}', 'TODAS') and o.datasai < '${parametro_valor}'
+          )
+        `);
       })
     );
 
