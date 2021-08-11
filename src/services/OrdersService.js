@@ -164,6 +164,7 @@ class OrdersService {
               filial: reg.filial,
               observacoes: reg.obs,
               sr_recno: reg.sr_recno,
+              tipo_retorno: reg.tipo_retorno,
             };
           }),
         };
@@ -245,6 +246,7 @@ class OrdersService {
     filial: filial_ordem,
     observacoes,
     sr_recno,
+    tipo_retorno,
     token,
     filial,
   }) {
@@ -343,6 +345,7 @@ class OrdersService {
                   filial: filial_ordem,
                   observacoes,
                   sr_recno,
+                  tipo_retorno,
                 },
               ],
             };

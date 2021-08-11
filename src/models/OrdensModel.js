@@ -21,7 +21,8 @@ class OrdensModel {
         trim(b.status) as status,
         trim(c.numcnh) as cnh,
         trim(b.obs1) as obs,
-        trim(b.empresa) as filial
+        trim(b.empresa) as filial,
+        trim(b.tipo_ret) as tipo_retorno
       FROM isat_ordem_temp a
       LEFT JOIN ordem b on a.ordem=b.ordem
       LEFT JOIN mot as c on c.codmot=b.codmot
@@ -49,7 +50,8 @@ class OrdensModel {
         '' as status,
         '' as cnh,
         '' as obs,
-        '' as filial
+        '' as filial,
+        '' as tipo_retorno
       FROM isat_ordem_temp a
       WHERE a.ordem>0 AND a.acao='DELETE'
       ORDER BY 11 DESC, 4 DESC
