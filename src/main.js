@@ -326,7 +326,9 @@ autoUpdater.on("error", (err) => {
 });
 
 autoUpdater.on("download-progress", (progressObj) => {
-  const message = `Vel. download: ${progressObj.bytesPerSecond} - Já baixou ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
+  const message = `Vel. download: ${
+    progressObj.bytesPerSecond / 1000
+  } / ${progressObj.percent.toFixed(1)} %`;
   global_config.window.webContents.send("log", {
     log: `(${new Date().toLocaleString()}) - Progresso do download da nova versão do app: ${message}`,
     type: "generals",
