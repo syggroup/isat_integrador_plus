@@ -157,6 +157,15 @@
           <div class="boxLogs" id="boxLogs_odometers"><ul></ul></div>
         </div>
       </div>
+      <div class="row">
+        <div class="child-row" style="width: 100%">
+          <div style="display: flex; justify-content: space-between">
+            <h1>Tokens:</h1>
+          </div>
+
+          <div class="boxLogs" id="boxLogs_tokens"><ul></ul></div>
+        </div>
+      </div>
     </div>
     <script type="text/javascript">
       const { ipcRenderer } = require("electron");
@@ -169,6 +178,7 @@
         orders: [],
         generals: [],
         odometers: [],
+        tokens: [],
       };
       const runs = {
         containers: true,
@@ -177,6 +187,7 @@
         orders: true,
         generals: true,
         odometers: true,
+        tokens: true,
       };
 
       const globals = {
@@ -362,11 +373,47 @@
         notification.classList.remove("hidden");
         ipcRenderer.send("restart_app");
       });
-
+    </script>
+    <script>
       (async () => {
         document.title = `Sagi - Integração iSat (${await ipcRenderer.invoke(
           "getAppVersion"
         )})`;
+      })();
+
+      (async function getTokens() {
+        globals.tokens = await ipcRenderer.invoke("getTokens");
+
+        if (globals.tokens) {
+          const _logs = logs["tokens"].splice(0, logs["tokens"].length);
+
+          _logs.forEach((log) => document.getElementById(log.id).remove());
+
+          globals.tokens.forEach((token) => {
+            const id = uuidv4();
+
+            const ul = document.querySelector(`#boxLogs_tokens ul`);
+            const li = document.createElement("li");
+
+            li.setAttribute("id", id);
+            ul.appendChild(li);
+            const elem = document.getElementById(id);
+            elem.innerHTML = `
+              <b>Filial</b>: ${token.filial} / <b>Status</b>: ${
+              token.usa.trim() === ".T." ? "SIM" : "NÃO"
+            } / <b>Token</b>: ${token.token} / <b>Data Inicial</b>: ${
+              token.data_inicial_sinc_isat
+            } / <b>Movimenta Caçambas</b>: ${
+              token.movimenta_cacamba ? "SIM" : "NÃO"
+            }
+            `;
+            elem.style.lineHeight = "25px";
+
+            logs["tokens"].push({ id });
+          });
+        }
+
+        setTimeout(() => getTokens(), 60000);
       })();
     </script>
   </body>

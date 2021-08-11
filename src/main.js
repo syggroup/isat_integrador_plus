@@ -318,6 +318,21 @@ app.on("window-all-closed", function () {
   if (process.platform !== "darwin") app.quit();
 });
 
+autoUpdater.on("error", (err) => {
+  global_config.window.webContents.send("log", {
+    log: `(${new Date().toLocaleString()}) - Erro serviço atualização(app): ${err}`,
+    type: "generals",
+  });
+});
+
+autoUpdater.on("download-progress", (progressObj) => {
+  const message = `Vel. download: ${progressObj.bytesPerSecond} - Já baixou ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
+  global_config.window.webContents.send("log", {
+    log: `(${new Date().toLocaleString()}) - Progresso do download da nova versão do app: ${message}`,
+    type: "generals",
+  });
+});
+
 autoUpdater.on("update-available", () => {
   global_config.window.webContents.send("update_available");
 });
@@ -348,3 +363,14 @@ ipcMain.handle("getNomeGeral", async () => {
 });
 
 ipcMain.handle("getAppVersion", () => app.getVersion());
+
+ipcMain.handle("getTokens", async () => {
+  if (global_config.db) {
+    return await new StartService(
+      global_config.window,
+      global_config.db
+    ).getTokens();
+  } else {
+    return null;
+  }
+});

@@ -187,6 +187,17 @@ class StartService {
     return 0;
   }
 
+  async getTokens() {
+    try {
+      const { filiais } = (await this.dados.getDados())[0];
+
+      return await this.parametros.getTokens({
+        filiais,
+      });
+    } catch (err) {}
+    return null;
+  }
+
   /* async odometer() {
     try {
       this.writeLog(
