@@ -362,6 +362,12 @@
         notification.classList.remove("hidden");
         ipcRenderer.send("restart_app");
       });
+
+      (async () => {
+        document.title = `Sagi - Integração iSat (${await ipcRenderer.invoke(
+          "getAppVersion"
+        )})`;
+      })();
     </script>
   </body>
 </html>

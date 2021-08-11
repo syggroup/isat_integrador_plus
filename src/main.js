@@ -48,6 +48,17 @@ function createIconAndTray() {
         },
       },
       {
+        label: "Versão",
+        type: "normal",
+        click: () => {
+          dialog.showMessageBox({
+            type: "info",
+            title: "Versão do executável",
+            message: `Atualmente o executável está na versao: ${app.getVersion()}`,
+          });
+        },
+      },
+      {
         label: "Fechar",
         type: "normal",
         click: async () => {
@@ -335,3 +346,5 @@ ipcMain.handle("getNomeGeral", async () => {
     return 0;
   }
 });
+
+ipcMain.handle("getAppVersion", () => app.getVersion());
