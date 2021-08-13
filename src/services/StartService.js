@@ -23,6 +23,7 @@ class StartService {
     this.tokens = [];
     this.unique_tokens = [];
     this.window = window;
+    this.iamrunning = false;
   }
 
   async start() {
@@ -47,7 +48,9 @@ class StartService {
       });
 
       if (this.tokens.length > 0) {
-        if (!gps_aberto || ms >= 1000 * 300) {
+        if (!gps_aberto || ms >= 1000 * 300 || this.iamrunning) {
+          this.iamrunning = true;
+
           await this.dados.setDados({
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
@@ -64,10 +67,6 @@ class StartService {
           await this.referencesService.execute({ tokens: this.unique_tokens });
 
           await this.ordersService.execute({ tokens: this.tokens });
-
-          await this.dados.setDados({
-            datetime: "",
-          });
         } else {
           this.writeLog(
             `(${new Date().toLocaleString()}) - Já tem um integrador aberto (${
@@ -81,12 +80,16 @@ class StartService {
         );
       }
     } catch (err) {
+      this.iamrunning = false;
+      await this.dados.setDados({
+        datetime: "",
+      });
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço geral: ${err.message}`
       );
+    } finally {
+      setTimeout(() => this.start(), 60000);
     }
-
-    setTimeout(() => this.start(), 60000);
   }
 
   async verificaIntegracaoIsat() {

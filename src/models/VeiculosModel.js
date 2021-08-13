@@ -20,6 +20,16 @@ class VeiculosModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     return result[1].rowCount;
   }
+
+  async notFindInIsatAndUpdate(data) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    const result = await this.db.query(`
+      UPDATE sagi_cad_ativo
+      SET ativo_rastreador='NENHUM'
+      WHERE trim(ativo_placa) not in('${data.join("','")}')
+    `);
+    return result[1].rowCount;
+  }
 }
 
 module.exports = VeiculosModel;

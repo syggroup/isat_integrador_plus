@@ -1,5 +1,3 @@
-const moment = require("moment");
-
 class OrdensModel {
   constructor(db) {
     this.db = db;
@@ -34,7 +32,7 @@ class OrdensModel {
         ${
           data_inicial_sinc_isat
             ? ` AND b.datasai >= '${data_inicial_sinc_isat}'`
-            : ""
+            : " AND b.datasai >= current_date - 7 "
         }
       UNION ALL
       SELECT a.sr_recno,

@@ -252,7 +252,7 @@ async function startService() {
       }
     } catch (err) {}
 
-    setTimeout(() => startService(), 60000);
+    setTimeout(() => startService(), 30000);
   }
 }
 
@@ -273,31 +273,44 @@ function automaticCheckForUpdates() {
 
 app.whenReady().then(() => {
   try {
-    const { host, port, user, password, database } = checkArguments(app);
+    const isUniqueInstance = app.requestSingleInstanceLock();
 
-    if (!host || !port || !user || !password || !database) {
-      dialog
-        .showMessageBox({
-          type: "error",
-          title: "Erro na validação dos argumentos",
-          message: "Parâmetros de inicialização ausentes ou inválidos!",
-        })
-        .then(() => {
-          app.isQuiting = true;
-          if (process.platform !== "darwin") app.quit();
-        });
+    if (!isUniqueInstance) {
+      new Notification({
+        icon: global_config.iconpath,
+        title: "Ops",
+        body: "Integrador Isat ja está em execução ...",
+      }).show();
+
+      app.isQuiting = true;
+      if (process.platform !== "darwin") app.quit();
     } else {
-      createIconAndTray();
+      const { host, port, user, password, database } = checkArguments(app);
 
-      createWindow();
+      if (!host || !port || !user || !password || !database) {
+        dialog
+          .showMessageBox({
+            type: "error",
+            title: "Erro na validação dos argumentos",
+            message: "Parâmetros de inicialização ausentes ou inválidos!",
+          })
+          .then(() => {
+            app.isQuiting = true;
+            if (process.platform !== "darwin") app.quit();
+          });
+      } else {
+        createIconAndTray();
 
-      automaticCheckForUpdates();
+        createWindow();
 
-      startService();
+        automaticCheckForUpdates();
 
-      app.on("activate", function () {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
-      });
+        startService();
+
+        app.on("activate", function () {
+          if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+      }
     }
   } catch (err) {
     dialog
@@ -326,9 +339,7 @@ autoUpdater.on("error", (err) => {
 });
 
 autoUpdater.on("download-progress", (progressObj) => {
-  const message = `Vel. download: ${
-    progressObj.bytesPerSecond / 1000
-  } / ${progressObj.percent.toFixed(1)} %`;
+  const message = `${progressObj.percent.toFixed(1)} %`;
   global_config.window.webContents.send("log", {
     log: `(${new Date().toLocaleString()}) - Progresso do download da nova versão do app: ${message}`,
     type: "generals",

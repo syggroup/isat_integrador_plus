@@ -8,6 +8,10 @@ class Veiculos {
   update(data) {
     return this.veiculos_model.update(data);
   }
+
+  notFindInIsatAndUpdate(data) {
+    return this.veiculos_model.notFindInIsatAndUpdate(data);
+  }
 }
 
 module.exports = Veiculos;

@@ -188,6 +188,13 @@ class OrdersService {
 
           await Promise.all(
             retornos.map(async (retorno) => {
+              if (retorno.erro) {
+                await this.ordens.retornoIsat({
+                  ordem: retorno.registro.ordem,
+                  situacao: retorno.erro.substr(0, 30),
+                });
+              }
+
               if (
                 !retorno.erro ||
                 (retorno.erro &&
@@ -449,7 +456,10 @@ class OrdersService {
               const { ordem, situacao, checks, imprevistos, cacambas, kms } =
                 registro;
 
-              await this.ordens.retornoIsat({ ordem, situacao });
+              await this.ordens.retornoIsat({
+                ordem,
+                situacao: situacao.substr(0, 30),
+              });
 
               if (checks.length > 0) {
                 await this.ordens.treatCheck({

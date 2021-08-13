@@ -12,15 +12,19 @@ class VehiclesService {
     this.veiculos = new Veiculos(db);
 
     this.window = window;
+
+    this.placas_isat = [];
   }
 
   async execute({ tokens }) {
     try {
       await Promise.all(
-        tokens.map(({ token, filial }) => {
-          return Promise.all([this.manageVehicles(token, filial)]);
-        })
+        tokens.map(({ token, filial }) => this.manageVehicles(token, filial))
       );
+
+      if (this.placas_isat.length > 0) {
+        await this.veiculos.notFindInIsatAndUpdate(this.placas_isat);
+      }
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço veículos: ${
@@ -62,7 +66,10 @@ class VehiclesService {
 
         await Promise.all(
           registros.map(async (registro) => {
+            this.placas_isat.push(registro.placa);
+
             const count = await this.veiculos.update(registro);
+
             if (count === 0) {
               this.writeLog(
                 `(${new Date().toLocaleString()} / ${filial}) - Veiculo:${
