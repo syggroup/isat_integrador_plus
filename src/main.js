@@ -335,7 +335,7 @@ app.on("window-all-closed", function () {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("will-quit", function () {
+app.on("will-quit", async () => {
   try {
     if (global_config.db) {
       await global_config.db.close();
