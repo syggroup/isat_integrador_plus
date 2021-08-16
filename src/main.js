@@ -215,7 +215,11 @@ async function verifySagiUpdate() {
 
 function runAllServices() {
   try {
-    new StartService(global_config.window, global_config.db).start();
+    new StartService(
+      global_config.window,
+      global_config.db,
+      app.getVersion()
+    ).start();
     // new StartService(global_config.window, global_config.db).odometer();
   } catch (err) {
     global_config.window.webContents.send("log", {
@@ -329,6 +333,14 @@ app.whenReady().then(() => {
 app.on("window-all-closed", function () {
   app.isQuiting = true;
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("will-quit", function () {
+  try {
+    if (global_config.db) {
+      await global_config.db.close();
+    }
+  } catch (err) {}
 });
 
 autoUpdater.on("error", (err) => {

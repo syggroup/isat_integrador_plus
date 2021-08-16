@@ -11,7 +11,7 @@ const ContainersService = require("./ContainersService");
 const api = require("../services/api");
 
 class StartService {
-  constructor(window, db) {
+  constructor(window, db, app_version = null) {
     this.dados = new Dados(db);
     this.parametros = new Parametros(db);
 
@@ -23,6 +23,7 @@ class StartService {
     this.tokens = [];
     this.unique_tokens = [];
     this.window = window;
+    this.app_version = app_version;
     this.iamrunning = false;
   }
 
@@ -238,6 +239,7 @@ class StartService {
           hostname: hostname(),
           date: datetime.split(" ")[0],
           time: datetime.split(" ")[1],
+          app_version: this.app_version,
         })
         .catch((err) =>
           this.writeLog(

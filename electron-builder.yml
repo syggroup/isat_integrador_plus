@@ -4,6 +4,7 @@ publish:
   private: false
   owner: "syggroup"
   repo: "isat_integrador"
+  token: "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"
 win:
   target: "nsis"
   certificateFile: "C:/sagi/devel/doc/certificado_assina_binarios.pfx"
