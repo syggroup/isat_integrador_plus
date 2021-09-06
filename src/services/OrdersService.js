@@ -453,8 +453,15 @@ class OrdersService {
 
           await Promise.all(
             retornos.map(async (registro) => {
-              const { ordem, situacao, checks, imprevistos, cacambas, kms } =
-                registro;
+              const {
+                ordem,
+                situacao,
+                checks,
+                imprevistos,
+                cacambas,
+                kms,
+                first_iter,
+              } = registro;
 
               await this.ordens.retornoIsat({
                 ordem,
@@ -512,6 +519,14 @@ class OrdersService {
                 await this.ordens.treatKm({
                   ordem,
                   km: kms[1],
+                });
+              }
+
+              if (first_iter.date && first_iter.time) {
+                await this.ordens.setInitialDateTime({
+                  ordem,
+                  date: first_iter.date,
+                  time: first_iter.time,
                 });
               }
 

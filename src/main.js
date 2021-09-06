@@ -25,6 +25,15 @@ const global_config = {
   db: null,
   verifica_integracao_isat: false,
   verifica_data_inicial_sinc_isat: false,
+  timeout_verify_sagi_update: null,
+  timeout_start_service: null,
+  timeout_automatic_check_for_updates: null,
+  timeout_run_all_services: null,
+  isRunning: {
+    value: false,
+    get: () => global_config.isRunning.value,
+    set: (value) => (global_config.isRunning.value = value),
+  },
 };
 
 function createIconAndTray() {
@@ -123,7 +132,9 @@ function createWindow() {
 
 async function setGlobalConnectionDatabase() {
   try {
-    global_config.db = await new Database().getConnection();
+    if (!global_config.db) {
+      global_config.db = await new Database().getConnection();
+    }
     return true;
   } catch (err) {
     global_config.window.webContents.send("log", {
@@ -209,16 +220,21 @@ async function verifySagiUpdate() {
       type: "generals",
     });
   } finally {
-    setTimeout(() => verifySagiUpdate(), 15000);
+    clearTimeout(global_config.timeout_verify_sagi_update);
+    global_config.timeout_verify_sagi_update = setTimeout(
+      () => verifySagiUpdate(),
+      30000
+    );
   }
 }
 
-function runAllServices() {
+async function runAllServices() {
   try {
-    new StartService(
+    await new StartService(
       global_config.window,
       global_config.db,
-      app.getVersion()
+      app.getVersion(),
+      global_config.isRunning
     ).start();
     // new StartService(global_config.window, global_config.db).odometer();
   } catch (err) {
@@ -228,6 +244,12 @@ function runAllServices() {
       }`,
       type: "generals",
     });
+  } finally {
+    clearTimeout(global_config.timeout_run_all_services);
+    global_config.timeout_run_all_services = setTimeout(
+      () => runAllServices(),
+      30000
+    );
   }
 }
 
@@ -256,7 +278,13 @@ async function startService() {
       }
     } catch (err) {}
 
-    setTimeout(() => startService(), 30000);
+    clearTimeout(global_config.timeout_run_all_services);
+    clearTimeout(global_config.timeout_verify_sagi_update);
+    clearTimeout(global_config.timeout_start_service);
+    global_config.timeout_start_service = setTimeout(
+      () => startService(),
+      30000
+    );
   }
 }
 
@@ -271,7 +299,11 @@ function automaticCheckForUpdates() {
       type: "generals",
     });
   } finally {
-    setTimeout(() => automaticCheckForUpdates(), 1800000);
+    clearTimeout(global_config.timeout_automatic_check_for_updates);
+    global_config.timeout_automatic_check_for_updates = setTimeout(
+      () => automaticCheckForUpdates(),
+      1800000
+    );
   }
 }
 

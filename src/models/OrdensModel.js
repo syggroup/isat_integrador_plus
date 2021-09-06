@@ -276,6 +276,28 @@ class OrdensModel {
     return 0;
   }
 
+  async setInitialDateTime({ ordem, date, time }) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
+    const result_ordem = await this.db.query(`
+      SELECT datasai, horaapa FROM ordem WHERE ordem=${ordem}
+    `);
+
+    if (result_ordem[1].rowCount > 0) {
+      if (
+        result_ordem[1].rows[0].datasai !== date ||
+        result_ordem[1].rows[0].horaapa !== time
+      ) {
+        const result = await this.db.query(
+          `UPDATE ordem SET datasai='${date}', horaapa='${time}' WHERE ordem=${ordem}`
+        );
+        return result[1].rowCount;
+      }
+    }
+
+    return 0;
+  }
+
   async retornoIsat({ ordem, situacao }) {
     await this.db.query("SET client_encoding TO 'UTF-8'");
 

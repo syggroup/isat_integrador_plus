@@ -41,6 +41,10 @@ class Ordens {
     return this.ordens_model.treatKm(data);
   }
 
+  setInitialDateTime(data) {
+    return this.ordens_model.setInitialDateTime(data);
+  }
+
   retornoIsat(data) {
     return this.ordens_model.retornoIsat(data);
   }

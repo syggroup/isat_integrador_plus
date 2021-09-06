@@ -11,7 +11,7 @@ const ContainersService = require("./ContainersService");
 const api = require("../services/api");
 
 class StartService {
-  constructor(window, db, app_version = null) {
+  constructor(window, db, app_version = null, isRunning = {}) {
     this.dados = new Dados(db);
     this.parametros = new Parametros(db);
 
@@ -24,7 +24,7 @@ class StartService {
     this.unique_tokens = [];
     this.window = window;
     this.app_version = app_version;
-    this.iamrunning = false;
+    this.isRunning = isRunning;
   }
 
   async start() {
@@ -49,14 +49,14 @@ class StartService {
       });
 
       if (this.tokens.length > 0) {
-        if (!gps_aberto || ms >= 1000 * 300 || this.iamrunning) {
-          this.iamrunning = true;
+        if (!gps_aberto || ms >= 1000 * 300 || this.isRunning.get()) {
+          this.isRunning.set(true);
 
           await this.dados.setDados({
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
 
-          await this.sendMachineDataToIsat();
+          this.sendMachineDataToIsat();
 
           await this.vehiclesService.execute({ tokens: this.unique_tokens });
 
@@ -81,16 +81,17 @@ class StartService {
         );
       }
     } catch (err) {
-      this.iamrunning = false;
+      this.isRunning.set(false);
       await this.dados.setDados({
         datetime: "",
       });
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço geral: ${err.message}`
       );
-    } finally {
-      setTimeout(() => this.start(), 60000);
-    }
+    } /* finally {
+      clearTimeout(this.timeout);
+      this.timeout = setTimeout(() => this.start(), 60000);
+    } */
   }
 
   async verificaIntegracaoIsat() {
