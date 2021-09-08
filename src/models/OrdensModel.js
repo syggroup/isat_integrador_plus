@@ -234,11 +234,13 @@ class OrdensModel {
           `${cacamba.numeros.join(";")};` &&
           cacamba.tipo === "VOLTA")
       ) {
+        await this.db.query("SET client_encoding TO 'UTF-8'");
         const result = await this.db.query(`
           UPDATE ordem SET ${
             cacamba.tipo === "IDA" ? "numero" : "numeroret"
           }='${cacamba.numeros.join(";")};' WHERE ordem=${ordem}
         `);
+        await this.db.query("SET client_encoding TO 'SQL_ASCII'");
         return result[1].rowCount;
       }
     }
