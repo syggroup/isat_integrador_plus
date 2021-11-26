@@ -165,6 +165,7 @@ class OrdersService {
               observacoes: reg.obs,
               sr_recno: reg.sr_recno,
               tipo_retorno: reg.tipo_retorno,
+              tipo_ordem: reg.tipo_ordem,
             };
           }),
         };
@@ -206,7 +207,7 @@ class OrdersService {
                 });
               } else if (retorno.erro && retorno.erro.indexOf("ncia") !== -1) {
                 await this.checkRefAndTrySendOrderAgain({
-                  ...retorno.registro,
+                  registro: retorno.registro,
                   token,
                   filial,
                 });
@@ -240,20 +241,23 @@ class OrdersService {
   }
 
   async checkRefAndTrySendOrderAgain({
-    ordem,
-    tipo,
-    placa,
-    datasai,
-    codigo,
-    sequencia,
-    horasai,
-    status,
-    num_col,
-    cnh,
-    filial: filial_ordem,
-    observacoes,
-    sr_recno,
-    tipo_retorno,
+    registro: {
+      ordem,
+      tipo,
+      placa,
+      datasai,
+      codigo,
+      sequencia,
+      horasai,
+      status,
+      num_col,
+      cnh,
+      filial: filial_ordem,
+      observacoes,
+      sr_recno,
+      tipo_retorno,
+      tipo_ordem,
+    },
     token,
     filial,
   }) {
@@ -353,6 +357,7 @@ class OrdersService {
                   observacoes,
                   sr_recno,
                   tipo_retorno,
+                  tipo_ordem,
                 },
               ],
             };
@@ -519,6 +524,12 @@ class OrdersService {
                 await this.ordens.treatKm({
                   ordem,
                   km: kms[1],
+                });
+              }
+              if (kms.length === 3 && kms[2].valor) {
+                await this.ordens.treatKm({
+                  ordem,
+                  km: kms[2],
                 });
               }
 

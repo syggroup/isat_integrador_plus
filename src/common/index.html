@@ -268,24 +268,21 @@
       }); */
 
       function createLog(description, type) {
+        const ul = document.querySelector(`#boxLogs_${type} ul`);
+
+        if (logs[type].length >= 1000) {
+          removeAllChildNodes(ul);
+        }
+
         const id = uuidv4();
 
-        const ul = document.querySelector(`#boxLogs_${type} ul`);
         const li = document.createElement("li");
 
         li.setAttribute("id", id);
         li.appendChild(document.createTextNode(description));
         ul.appendChild(li);
 
-        ul.scrollTop = ul.scrollHeight;
-
         logs[type].push({ id });
-
-        if (logs[type].length >= 1000) {
-          const _id = logs[type].shift();
-
-          document.getElementById(_id.id).remove();
-        }
       }
 
       function startStopLogs(type) {
@@ -300,6 +297,12 @@
         const _logs = logs[type].splice(0, logs[type].length);
 
         _logs.forEach((log) => document.getElementById(log.id).remove());
+      }
+
+      function removeAllChildNodes(parent) {
+        while (parent.firstChild) {
+          parent.removeChild(parent.firstChild);
+        }
       }
 
       /* (async function getNomeGeralAndConnectToWs() {

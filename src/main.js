@@ -11,6 +11,7 @@ const {
 } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
+const { exec } = require("child_process");
 
 const Database = require("./database");
 
@@ -71,12 +72,6 @@ function createIconAndTray() {
         label: "Fechar",
         type: "normal",
         click: async () => {
-          try {
-            if (global_config.db) {
-              await global_config.db.close();
-            }
-          } catch (err) {}
-
           app.isQuiting = true;
           if (process.platform !== "darwin") app.quit();
         },
@@ -107,13 +102,6 @@ function createWindow() {
     ...screen.getPrimaryDisplay().size,
   });
 
-  //global_config.window.webContents.openDevTools();
-
-  //global_config.window.on("minimize", function (event) {
-  //  event.preventDefault();
-  //  global_config.window.hide();
-  //});
-
   global_config.window.on("close", function (event) {
     if (!app.isQuiting) {
       event.preventDefault();
@@ -130,35 +118,15 @@ function createWindow() {
   global_config.window.loadFile(path.join(__dirname, "common", "index.html"));
 }
 
-async function setGlobalConnectionDatabase() {
-  try {
-    if (!global_config.db) {
-      global_config.db = await new Database().getConnection();
-    }
-    return true;
-  } catch (err) {
-    global_config.window.webContents.send("log", {
-      log: `(${new Date().toLocaleString()}) - Erro conexão banco de dados: ${
-        err.message
-      }`,
-      type: "generals",
-    });
-    return false;
-  }
-}
-
 async function verifyIntegrationIsat() {
   try {
-    if (!global_config.verifica_integracao_isat) {
-      global_config.verifica_integracao_isat = true;
+    const db = await new Database().getConnection();
 
-      return await new StartService(
-        global_config.window,
-        global_config.db
-      ).verificaIntegracaoIsat();
-    }
+    global_config.verifica_integracao_isat = true;
 
-    return true;
+    await new StartService(global_config.window, db).verificaIntegracaoIsat();
+
+    await db.close();
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro verifica integração iSat: ${
@@ -166,22 +134,21 @@ async function verifyIntegrationIsat() {
       }`,
       type: "generals",
     });
-    return false;
   }
 }
 
 async function verifyDateStartSyncIsat() {
   try {
-    if (!global_config.verifica_data_inicial_sinc_isat) {
-      global_config.verifica_data_inicial_sinc_isat = true;
+    const db = await new Database().getConnection();
 
-      return await new StartService(
-        global_config.window,
-        global_config.db
-      ).verificaDataInicialSincIsat();
-    }
+    global_config.verifica_data_inicial_sinc_isat = true;
 
-    return true;
+    await new StartService(
+      global_config.window,
+      db
+    ).verificaDataInicialSincIsat();
+
+    await db.close();
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro verifica data inicial sinc iSat: ${
@@ -189,25 +156,21 @@ async function verifyDateStartSyncIsat() {
       }`,
       type: "generals",
     });
-    return false;
   }
 }
 
 async function verifySagiUpdate() {
   try {
-    const check = await new StartService(
-      global_config.window,
-      global_config.db
-    ).checkUpdateSagi();
+    const db = await new Database().getConnection();
 
-    if (check) {
+    if (await new StartService(global_config.window, db).checkUpdateSagi()) {
       new Notification({
         icon: global_config.iconpath,
         title: "Aviso",
         body: "O serviço está sendo encerrado pois o sistema SAGI está em processo de atualização",
       }).show();
 
-      await global_config.db.close();
+      await db.close();
 
       app.isQuiting = true;
       if (process.platform !== "darwin") app.quit();
@@ -230,13 +193,14 @@ async function verifySagiUpdate() {
 
 async function runAllServices() {
   try {
+    const db = await new Database().getConnection();
+
     await new StartService(
       global_config.window,
-      global_config.db,
+      db,
       app.getVersion(),
       global_config.isRunning
     ).start();
-    // new StartService(global_config.window, global_config.db).odometer();
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro serviço geral: ${
@@ -255,15 +219,17 @@ async function runAllServices() {
 
 async function startService() {
   try {
-    if (await setGlobalConnectionDatabase()) {
-      await verifyIntegrationIsat();
-
-      await verifyDateStartSyncIsat();
-
-      runAllServices();
-
-      verifySagiUpdate();
+    if (!global_config.verifica_integracao_isat) {
+      verifyIntegrationIsat();
     }
+
+    if (!global_config.verifica_data_inicial_sinc_isat) {
+      verifyDateStartSyncIsat();
+    }
+
+    runAllServices();
+
+    verifySagiUpdate();
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro serviço geral: ${
@@ -271,12 +237,6 @@ async function startService() {
       }`,
       type: "generals",
     });
-
-    try {
-      if (global_config.db) {
-        await global_config.db.close();
-      }
-    } catch (err) {}
 
     clearTimeout(global_config.timeout_run_all_services);
     clearTimeout(global_config.timeout_verify_sagi_update);
@@ -307,7 +267,18 @@ function automaticCheckForUpdates() {
   }
 }
 
-app.whenReady().then(() => {
+function checkOldExecutableIsRunningAndClose() {
+  try {
+    exec("taskkill /IM integrador_isat.exe /F");
+  } catch (err) {
+    global_config.window.webContents.send("log", {
+      log: `(${new Date().toLocaleString()}) - Erro ao tentar finalizar processo antigo integrador: ${err}`,
+      type: "generals",
+    });
+  }
+}
+
+app.whenReady().then(async () => {
   try {
     const isUniqueInstance = app.requestSingleInstanceLock();
 
@@ -335,6 +306,8 @@ app.whenReady().then(() => {
             if (process.platform !== "darwin") app.quit();
           });
       } else {
+        checkOldExecutableIsRunningAndClose();
+
         createIconAndTray();
 
         createWindow();
@@ -367,14 +340,6 @@ app.on("window-all-closed", function () {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("will-quit", async () => {
-  try {
-    if (global_config.db) {
-      await global_config.db.close();
-    }
-  } catch (err) {}
-});
-
 autoUpdater.on("error", (err) => {
   global_config.window.webContents.send("log", {
     log: `(${new Date().toLocaleString()}) - Erro serviço atualização(app): ${err}`,
@@ -399,21 +364,21 @@ autoUpdater.on("update-downloaded", () => {
 });
 
 ipcMain.on("restart_app", async () => {
-  try {
-    if (global_config.db) {
-      await global_config.db.close();
-    }
-  } catch (err) {}
-
   autoUpdater.quitAndInstall(true, false);
 });
 
 ipcMain.handle("getNomeGeral", async () => {
-  if (global_config.db) {
-    return await new StartService(
+  const db = await new Database().getConnection();
+
+  if (db) {
+    const nomegeral = await new StartService(
       global_config.window,
-      global_config.db
+      db
     ).getNomeGeral();
+
+    await db.close();
+
+    return nomegeral;
   } else {
     return 0;
   }
@@ -422,11 +387,14 @@ ipcMain.handle("getNomeGeral", async () => {
 ipcMain.handle("getAppVersion", () => app.getVersion());
 
 ipcMain.handle("getTokens", async () => {
-  if (global_config.db) {
-    return await new StartService(
-      global_config.window,
-      global_config.db
-    ).getTokens();
+  const db = await new Database().getConnection();
+
+  if (db) {
+    const tokens = await new StartService(global_config.window, db).getTokens();
+
+    await db.close();
+
+    return tokens;
   } else {
     return null;
   }

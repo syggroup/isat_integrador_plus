@@ -1,7 +1,6 @@
 appId: com.sagisolutions.sagi_x_isat
 publish:
   provider: "github"
-  private: false
   owner: "syggroup"
   repo: "isat_integrador"
 win:

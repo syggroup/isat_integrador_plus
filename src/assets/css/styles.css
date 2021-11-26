@@ -86,14 +86,14 @@ span {
   flex: 1;
   background: rgb(25, 24, 31);
   margin-top: 10px;
+  max-height: 235px;
   overflow: auto;
 }
 
 ul {
   list-style-type: none;
   display: flex;
-  flex-direction: column;
-  max-height: 100%;
+  flex-direction: column-reverse;
   overflow: auto;
   font-size: 14px;
 }

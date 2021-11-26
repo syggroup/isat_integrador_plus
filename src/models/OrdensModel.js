@@ -20,7 +20,8 @@ class OrdensModel {
         trim(c.numcnh) as cnh,
         trim(b.obs1) as obs,
         trim(b.empresa) as filial,
-        trim(b.tipo_ret) as tipo_retorno
+        trim(b.tipo_ret) as tipo_retorno,
+        case when b.servico then 'SERVICO' when b.cli_for='COLETA' then 'COLETA' else 'EMBARQUE' end as tipo_ordem
       FROM isat_ordem_temp a
       LEFT JOIN ordem b on a.ordem=b.ordem
       LEFT JOIN mot as c on c.codmot=b.codmot
@@ -49,7 +50,8 @@ class OrdensModel {
         '' as cnh,
         '' as obs,
         '' as filial,
-        '' as tipo_retorno
+        '' as tipo_retorno,
+        '' as tipo_ordem
       FROM isat_ordem_temp a
       WHERE a.ordem>0 AND a.acao='DELETE'
       ORDER BY 11 DESC, 4 DESC
@@ -252,7 +254,7 @@ class OrdensModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     const result_ordem = await this.db.query(`
-      SELECT kmsai, kmchefor, kmsaifor FROM ordem WHERE ordem=${ordem}
+      SELECT kmsai, kmchefor, kmsaifor, kmche FROM ordem WHERE ordem=${ordem}
     `);
 
     if (result_ordem[1].rowCount > 0) {
@@ -262,13 +264,17 @@ class OrdensModel {
         ((result_ordem[1].rows[0].kmchefor != parseFloat(km.valor).toFixed(1) ||
           result_ordem[1].rows[0].kmsaifor !=
             parseFloat(km.valor).toFixed(1)) &&
-          km.tipo === "VOLTA")
+          km.tipo === "VOLTA") ||
+        (result_ordem[1].rows[0].kmche != parseFloat(km.valor).toFixed(1) &&
+          km.tipo === "ENCERRA")
       ) {
         const result = await this.db.query(`
           ${
             km.tipo === "IDA"
               ? `UPDATE ordem SET kmsai=${km.valor} WHERE ordem=${ordem}`
-              : `UPDATE ordem SET kmchefor=${km.valor}, kmsaifor=${km.valor} WHERE ordem=${ordem}`
+              : km.tipo === "VOLTA"
+              ? `UPDATE ordem SET kmchefor=${km.valor}, kmsaifor=${km.valor} WHERE ordem=${ordem}`
+              : `UPDATE ordem SET kmche=${km.valor} WHERE ordem=${ordem}`
           }
         `);
         return result[1].rowCount;
