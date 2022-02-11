@@ -5,3 +5,4 @@ dist/
 test/*
 test/
 src/main_bkp.js
+src/.vscode/bookmarks.json
