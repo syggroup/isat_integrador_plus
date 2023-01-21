@@ -271,7 +271,7 @@
         const ul = document.querySelector(`#boxLogs_${type} ul`);
 
         if (logs[type].length >= 1000) {
-          removeAllChildNodes(ul);
+          removeAllChildNodes(ul, type);
         }
 
         const id = uuidv4();
@@ -299,10 +299,11 @@
         _logs.forEach((log) => document.getElementById(log.id).remove());
       }
 
-      function removeAllChildNodes(parent) {
+      function removeAllChildNodes(parent, type) {
         while (parent.firstChild) {
           parent.removeChild(parent.firstChild);
         }
+        logs[type] = [];
       }
 
       /* (async function getNomeGeralAndConnectToWs() {

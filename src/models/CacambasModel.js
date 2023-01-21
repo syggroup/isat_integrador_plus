@@ -74,12 +74,35 @@ class CacambasModel {
 
   async update(data) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
-    const result = await this.db.query(`
-      UPDATE containe
-      SET codfor=${data.codigo}
-      WHERE trim(numero) = '${data.placa}'
-    `);
-    return result[1].rowCount;
+
+    if (parseInt(data.codigo, 10) === 0) {
+      const result = await this.db.query(`
+        UPDATE containe
+        SET codfor=${data.codigo},
+          datasai = null,
+          status = 'R',
+          forcli = '',
+				  fornecedor = '',
+				  local = '',
+          retorno = current_date,
+          placa = '',
+				  motorista = ''
+        WHERE trim(numero) = '${data.placa}'
+      `);
+      return result[1].rowCount;
+    } else {
+      const result2 = await this.db.query(`
+        UPDATE containe
+        SET codfor=${data.codigo},
+          datasai = ${data.data ? `'${data.data}'` : 'null'},
+          status = 'F',
+				  forcli = '${data.tipo_referencia.substr(0, 1)}',
+				  fornecedor = (select ${data.tipo_referencia.substr(0, 1) === 'F' ? 'fornecedor' : 'cliente'} from ${data.tipo_referencia.substr(0, 1) === 'F' ? 'cag_for' : 'cag_cli'} where ${data.tipo_referencia.substr(0, 1) === 'F' ? 'codfor' : 'codcli'} = ${data.codigo} limit 1),
+          retorno = null
+        WHERE trim(numero) = '${data.placa}'
+      `);
+      return result2[1].rowCount;
+    }
   }
 }
 

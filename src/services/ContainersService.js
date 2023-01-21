@@ -227,10 +227,44 @@ class ContainersService {
           }
         });
 
-        if (del_cacambas_in_isat.length > 0) {
+        /* if (del_cacambas_in_isat.length > 0) {
           const response = await api
             .post(`/v2/${token}/cacamba/delete`, {
               registros: del_cacambas_in_isat,
+            })
+            .catch((err) =>
+              this.writeLog(
+                `(${new Date().toLocaleString()} / ${filial}) - Erro requisição deleta Caçambas Api Isat: ${
+                  err.response
+                    ? `${err.response.status} - ${JSON.stringify(
+                        err.response.data
+                      )}`
+                    : err.message
+                }`
+              )
+            );
+
+          if (response && response.status === 200) {
+            const registros = response.data;
+
+            registros.forEach((reg) => {
+              if (reg.erro) {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
+                    reg.registro.placa
+                  }:DELETE:ERRO:${reg.erro}`
+                );
+              }
+            });
+          }
+        } */
+
+        while (del_cacambas_in_isat.length > 0) {
+          const regs = del_cacambas_in_isat.splice(0, 100);
+
+          const response = await api
+            .post(`/v2/${token}/cacamba/delete`, {
+              registros: regs,
             })
             .catch((err) =>
               this.writeLog(

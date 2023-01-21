@@ -5,7 +5,7 @@ publish:
   repo: "isat_integrador"
 win:
   target: "nsis"
-  certificateFile: "C:/sagi/devel/doc/certificado_assina_binarios.pfx"
+  certificateFile: "D:/devel/doc/certificado_assina_binarios.pfx"
   certificatePassword: "Vlp*253565"
 nsis:
   deleteAppDataOnUninstall: true

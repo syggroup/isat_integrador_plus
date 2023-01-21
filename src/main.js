@@ -11,7 +11,6 @@ const {
 } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
-const { exec } = require("child_process");
 
 const Database = require("./database");
 
@@ -33,9 +32,31 @@ const global_config = {
   isRunning: {
     value: false,
     get: () => global_config.isRunning.value,
-    set: (value) => (global_config.isRunning.value = value),
+    set: (value) => global_config.isRunning.value = value,
   },
+  window_splash: null,
 };
+
+function createSplashScreen() {
+  return new Promise((resolve) => {
+    global_config.window_splash = new BrowserWindow({
+      icon: nativeImage.createFromPath(global_config.iconpath),
+      width: 256,
+      height: 256,
+      transparent: true,
+      frame: false,
+      alwaysOnTop: true,
+    });
+
+    global_config.window_splash.loadFile(
+      path.join(__dirname, "common", "splash.html")
+    );
+
+    global_config.window_splash.center();
+
+    setTimeout(resolve, 2000);
+  });
+}
 
 function createIconAndTray() {
   global_config.icon = nativeImage.createFromPath(global_config.iconpath);
@@ -71,10 +92,7 @@ function createIconAndTray() {
       {
         label: "Fechar",
         type: "normal",
-        click: async () => {
-          app.isQuiting = true;
-          if (process.platform !== "darwin") app.quit();
-        },
+        click: loadSplashScreenAndQuitApp,
       },
     ])
   );
@@ -116,6 +134,8 @@ function createWindow() {
   });
 
   global_config.window.loadFile(path.join(__dirname, "common", "index.html"));
+
+  global_config.window_splash.hide();
 }
 
 async function verifyIntegrationIsat() {
@@ -172,8 +192,7 @@ async function verifySagiUpdate() {
 
       await db.close();
 
-      app.isQuiting = true;
-      if (process.platform !== "darwin") app.quit();
+      loadSplashScreenAndQuitApp();
     }
   } catch (err) {
     global_config.window.webContents.send("log", {
@@ -267,19 +286,10 @@ function automaticCheckForUpdates() {
   }
 }
 
-function checkOldExecutableIsRunningAndClose() {
-  try {
-    exec("taskkill /IM integrador_isat.exe /F");
-  } catch (err) {
-    global_config.window.webContents.send("log", {
-      log: `(${new Date().toLocaleString()}) - Erro ao tentar finalizar processo antigo integrador: ${err}`,
-      type: "generals",
-    });
-  }
-}
-
 app.whenReady().then(async () => {
   try {
+    await createSplashScreen();
+
     const isUniqueInstance = app.requestSingleInstanceLock();
 
     if (!isUniqueInstance) {
@@ -289,8 +299,7 @@ app.whenReady().then(async () => {
         body: "Integrador Isat ja está em execução ...",
       }).show();
 
-      app.isQuiting = true;
-      if (process.platform !== "darwin") app.quit();
+      loadSplashScreenAndQuitApp();
     } else {
       const { host, port, user, password, database } = checkArguments(app);
 
@@ -301,13 +310,8 @@ app.whenReady().then(async () => {
             title: "Erro na validação dos argumentos",
             message: "Parâmetros de inicialização ausentes ou inválidos!",
           })
-          .then(() => {
-            app.isQuiting = true;
-            if (process.platform !== "darwin") app.quit();
-          });
+          .then(loadSplashScreenAndQuitApp);
       } else {
-        checkOldExecutableIsRunningAndClose();
-
         createIconAndTray();
 
         createWindow();
@@ -328,17 +332,53 @@ app.whenReady().then(async () => {
         title: "Erro inesperado",
         message: err.message,
       })
-      .then(() => {
-        app.isQuiting = true;
-        if (process.platform !== "darwin") app.quit();
-      });
+      .then(loadSplashScreenAndQuitApp);
   }
 });
 
-app.on("window-all-closed", function () {
-  app.isQuiting = true;
-  if (process.platform !== "darwin") app.quit();
-});
+async function loadSplashScreenAndQuitApp() {
+  try {
+    if (global_config.window !== null) {
+      global_config.window.hide();
+    }
+
+    setTimeout(async () => {
+      try {
+        if (global_config.window_splash !== null) {
+          global_config.window_splash.show();
+        }
+
+        if (global_config.isRunning.value) {
+          try {
+            const db = await new Database().getConnection();
+
+            if (db) {
+              await new StartService(
+                global_config.window,
+                db
+              ).clearGpsAberto();
+
+              await db.close();
+            }
+          } catch(err) {}
+        }
+
+        setTimeout(() => {
+          app.isQuiting = true;
+          if (process.platform !== "darwin") app.quit();
+        }, global_config.window_splash !== null ? 2000 : 0);
+      } catch(err) {
+        app.isQuiting = true;
+        if (process.platform !== "darwin") app.quit();
+      }
+    }, global_config.window !== null ? 500 : 0);
+  } catch(err) {
+    app.isQuiting = true;
+    if (process.platform !== "darwin") app.quit();
+  }
+}
+
+app.on("window-all-closed", loadSplashScreenAndQuitApp);
 
 autoUpdater.on("error", (err) => {
   global_config.window.webContents.send("log", {

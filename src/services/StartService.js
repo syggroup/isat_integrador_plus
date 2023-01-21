@@ -192,6 +192,14 @@ class StartService {
     return 0;
   }
 
+  async clearGpsAberto() {
+    try {
+      await this.dados.setDados({
+        datetime: "",
+      });
+    } catch (err) {}
+  }
+
   async getTokens() {
     try {
       const { filiais } = (await this.dados.getDados())[0];
