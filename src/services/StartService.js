@@ -7,6 +7,8 @@ const ReferencesService = require("./ReferencesService");
 const VehiclesService = require("./VehiclesService");
 const OrdersService = require("./OrdersService");
 const ContainersService = require("./ContainersService");
+const TicketsService = require("./TicketsService");
+const WeighingsService = require("./WeighingsService");
 
 const api = require("../services/api");
 
@@ -19,6 +21,8 @@ class StartService {
     this.vehiclesService = new VehiclesService(window, db);
     this.ordersService = new OrdersService(window, db);
     this.containersService = new ContainersService(window, db);
+    this.ticketsService = new TicketsService(window, db);
+    this.weighingsService = new WeighingsService(window, db);
 
     this.tokens = [];
     this.unique_tokens = [];
@@ -27,9 +31,10 @@ class StartService {
     this.isRunning = isRunning;
   }
 
-  async start() {
+  async start(sygecom_cloud) {
     try {
-      const { gps_aberto, filiais } = (await this.dados.getDados())[0];
+      const { gps_aberto, filiais, versao } = (await this.dados.getDados())[0];
+      const split_versao = versao.split(".");
 
       const date_time = gps_aberto ? gps_aberto.replace("|", " ") : moment();
 
@@ -56,7 +61,7 @@ class StartService {
             datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
           });
 
-          this.sendMachineDataToIsat();
+          this.sendMachineDataToIsat(sygecom_cloud, versao);
 
           await this.vehiclesService.execute({ tokens: this.unique_tokens });
 
@@ -68,6 +73,17 @@ class StartService {
           await this.referencesService.execute({ tokens: this.unique_tokens });
 
           await this.ordersService.execute({ tokens: this.tokens });
+
+          await this.weighingsService.execute();
+
+          if (
+            versao.substr(0, 1).toUpperCase() === 'T' ||
+            parseInt(split_versao[0], 10) > 9 ||
+            (parseInt(split_versao[0], 10) == 9 && parseInt(split_versao[1], 10) > 6) ||
+            (parseInt(split_versao[0], 10) == 9 && parseInt(split_versao[1], 10) == 6 && parseInt(split_versao[3], 10) >= 100834)
+          ) { // 9.6.0.100834
+            await this.ticketsService.execute({ tokens: this.tokens });
+          }
         } else {
           this.writeLog(
             `(${new Date().toLocaleString()}) - Já tem um integrador aberto (${
@@ -172,8 +188,6 @@ class StartService {
 
     try {
       atualizacaoSagi = await this.dados.getForcaAtualizacao();
-
-      if (!atualizacaoSagi) clearTimeout(this.timeoutRun);
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro verifica atualização SAGI: ${
@@ -236,7 +250,7 @@ class StartService {
     setTimeout(() => this.odometer(), 60000);
   } */
 
-  async sendMachineDataToIsat() {
+  async sendMachineDataToIsat(sygecom_cloud, versao) {
     try {
       const idempresa = await this.dados.getNomeGeral();
       const datetime = moment().format("YYYY-MM-DD HH:mm:ss");
@@ -249,6 +263,8 @@ class StartService {
           date: datetime.split(" ")[0],
           time: datetime.split(" ")[1],
           app_version: this.app_version,
+          sygecom_cloud,
+          sagi_versao: versao,
         })
         .catch((err) =>
           this.writeLog(

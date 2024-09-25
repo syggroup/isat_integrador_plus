@@ -6,7 +6,7 @@ class DadosModel {
   async get() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(
-      "SELECT gps_aberto, filiais, nomegeral FROM dados"
+      "SELECT gps_aberto, filiais, nomegeral, coalesce(trim(versao), '0.0.0.0') as versao FROM dados"
     );
     return result[1].rows;
   }
@@ -29,6 +29,18 @@ class DadosModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query("SELECT nomegeral FROM dados");
     return result[1].rows[0].nomegeral;
+  }
+
+  async getCountMenuPermissa(idfuncao) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    const result = await this.db.query(`SELECT count(*) FROM permissa WHERE idfuncao = ${idfuncao}`);
+    return result[1].rows[0].count;
+  }
+
+  async getFunctionExists(nome_funcao) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    const result = await this.db.query(`select count(*) from pg_proc where proname = '${nome_funcao}'`);
+    return result[1].rows[0].count;
   }
 }
 

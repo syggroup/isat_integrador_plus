@@ -3,58 +3,60 @@ class OrdensModel {
     this.db = db;
   }
 
-  async get({ filial, data_inicial_sinc_isat }) {
+  async get({ filial, data_inicial_sinc_isat, limit }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`
-      SELECT a.sr_recno,
-        a.acao,
-        case when b.cli_for='COLETA' then 'FORNECEDOR' else 'CLIENTE' end as tipo,
-        a.ordem,
-        b.datasai::text,
-        trim(b.placa) as placa,
-        b.codfor as codigo,
-        b.num_col,
-        b.sequencia,
-        trim(b.horaapa) as horasai,
-        trim(b.status) as status,
-        trim(c.numcnh) as cnh,
-        trim(b.obs1) as obs,
-        trim(b.empresa) as filial,
-        trim(b.tipo_ret) as tipo_retorno,
-        case when b.servico then 'SERVICO' when b.cli_for='COLETA' then 'COLETA' else 'EMBARQUE' end as tipo_ordem
-      FROM isat_ordem_temp a
-      LEFT JOIN ordem b on a.ordem=b.ordem
-      LEFT JOIN mot as c on c.codmot=b.codmot
-      LEFT JOIN sagi_cad_ativo as d on d.ativo_placa=b.placa
-      WHERE a.ordem>0
-        and (a.acao='DELETE' or (a.acao<>'DELETE' and b.codmot>0 and d.ativo_rastreador='ISAT'))
-        and case when a.acao<>'DELETE' then (b.empresa='${filial}' or b.empresa='TODAS') else true end
-        and length(regexp_replace(c.numcnh, '\D', '', 'g')) = 11
-        ${
-          data_inicial_sinc_isat
-            ? ` AND b.datasai >= '${data_inicial_sinc_isat}'`
-            : " AND b.datasai >= current_date - 7 "
-        }
-      UNION ALL
-      SELECT a.sr_recno,
-        a.acao,
-        '' as tipo,
-        a.ordem,
-        current_date::text,
-        '' as placa,
-        0 as codigo,
-        0 as numcol,
-        0 as sequencia,
-        '' as horasai,
-        '' as status,
-        '' as cnh,
-        '' as obs,
-        '' as filial,
-        '' as tipo_retorno,
-        '' as tipo_ordem
-      FROM isat_ordem_temp a
-      WHERE a.ordem>0 AND a.acao='DELETE'
-      ORDER BY 11 DESC, 4 DESC
+        SELECT * FROM (
+          SELECT a.sr_recno,
+            a.acao,
+            case when b.cli_for='COLETA' then 'FORNECEDOR' else 'CLIENTE' end as tipo,
+            a.ordem,
+            b.datasai::text,
+            trim(b.placa) as placa,
+            b.codfor as codigo,
+            b.num_col,
+            b.sequencia,
+            trim(b.horaapa) as horasai,
+            trim(b.status) as status,
+            trim(c.numcnh) as cnh,
+            trim(b.obs1) as obs,
+            trim(b.empresa) as filial,
+            trim(b.tipo_ret) as tipo_retorno,
+            case when b.servico then 'SERVICO' when b.cli_for='COLETA' then 'COLETA' else 'EMBARQUE' end as tipo_ordem
+          FROM isat_ordem_temp a
+          LEFT JOIN ordem b on a.ordem=b.ordem
+          LEFT JOIN mot as c on c.codmot=b.codmot
+          LEFT JOIN sagi_cad_ativo as d on d.ativo_placa=b.placa
+          WHERE a.ordem>0
+            and (a.acao='DELETE' or (a.acao<>'DELETE' and b.codmot>0 and d.ativo_rastreador='ISAT'))
+            and case when a.acao<>'DELETE' then (b.empresa='${filial}' or b.empresa='TODAS') else true end
+            and length(regexp_replace(c.numcnh, '\D', '', 'g')) = 11
+            ${
+              data_inicial_sinc_isat
+                ? ` AND b.datasai >= '${data_inicial_sinc_isat.split("/").reverse().join("-")}'`
+                : " AND b.datasai >= current_date - 7 "
+            }
+          UNION ALL
+          SELECT a.sr_recno,
+            a.acao,
+            '' as tipo,
+            a.ordem,
+            current_date::text,
+            '' as placa,
+            0 as codigo,
+            0 as numcol,
+            0 as sequencia,
+            '' as horasai,
+            '' as status,
+            '' as cnh,
+            '' as obs,
+            '' as filial,
+            '' as tipo_retorno,
+            '' as tipo_ordem
+          FROM isat_ordem_temp a
+          WHERE a.ordem>0 AND a.acao='DELETE'
+          ORDER BY 11 DESC, 4 DESC
+        ) z LIMIT ${limit}
     `);
     return result[1].rows;
   }
@@ -68,7 +70,7 @@ class OrdensModel {
         AND a.datasai<=current_date+1
         ${
           data_inicial_sinc_isat
-            ? ` AND a.datasai >= '${data_inicial_sinc_isat}'`
+            ? ` AND a.datasai >= '${data_inicial_sinc_isat.split("/").reverse().join("-")}'`
             : ""
         }
         AND trim(a.placa)<>''
@@ -254,7 +256,12 @@ class OrdensModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     const result_ordem = await this.db.query(`
-      SELECT kmsai, kmchefor, kmsaifor, kmche FROM ordem WHERE ordem=${ordem}
+      SELECT coalesce(kmsai, 0.0) as kmsai,
+        coalesce(kmchefor, 0.0) as kmchefor,
+        coalesce(kmsaifor, 0.0) as kmsaifor,
+        coalesce(kmche, 0.0) as kmche
+      FROM ordem
+      WHERE ordem=${ordem}
     `);
 
     if (result_ordem[1].rowCount > 0) {
@@ -277,6 +284,11 @@ class OrdensModel {
               : `UPDATE ordem SET kmche=${km.valor} WHERE ordem=${ordem}`
           }
         `);
+
+        if (km.tipo === "ENCERRA" && parseFloat(km.valor) > 0 && parseFloat(result_ordem[1].rows[0].kmsai) > 0) {
+          await this.db.query(`UPDATE ordem SET kmtot=${km.valor - result_ordem[1].rows[0].kmsai} WHERE ordem=${ordem}`);
+        }
+
         return result[1].rowCount;
       }
     }
@@ -306,11 +318,11 @@ class OrdensModel {
     return 0;
   }
 
-  async retornoIsat({ ordem, situacao }) {
+  async retornoIsat({ ordem, situacao, movimenta_cacamba }) {
     await this.db.query("SET client_encoding TO 'UTF-8'");
 
     const result_ordem = await this.db.query(`
-      SELECT retorno_isat FROM ordem WHERE ordem=${ordem}
+      SELECT retorno_isat, trim(cli_for) as tipo FROM ordem WHERE ordem=${ordem}
     `);
 
     if (result_ordem[1].rowCount > 0) {
@@ -318,6 +330,12 @@ class OrdensModel {
         await this.db.query(
           `UPDATE ordem SET retorno_isat='${situacao}' WHERE ordem=${ordem}`
         );
+
+        if (movimenta_cacamba && result_ordem[1].rows[0].tipo === 'EMBARQUE' && situacao.trim() === 'ENCERRADA NO DRIVERSAT') {
+          await this.db.query(
+            `UPDATE ordem SET status='F', obs='FINALIZADO' WHERE ordem=${ordem}`
+          );
+        }
       }
     }
 

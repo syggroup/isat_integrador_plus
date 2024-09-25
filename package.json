@@ -1,19 +1,20 @@
 {
-  "name": "integrador_isat2",
+  "name": "integrador_isat3",
   "description": "Sistema para integração do Sagi com iSat",
   "author": "Sygecom Informática Ltda.",
-  "version": "1.3.7",
+  "version": "1.5.1",
   "main": "src/main.js",
   "license": "MIT",
   "scripts": {
-    "start": "electron . --host=localhost --port=5432 --user=sygecom --password=253565 --database=sagi_demo_20210619",
+    "start": "electron . --host=localhost --port=5432 --user=sygecom --password=253565 --database=idempresa4",
     "pack": "electron-builder --dir",
+    "pack-only": "electron-builder --prepackaged ./",
     "build": "electron-builder build --win --x64 --ia32 --publish never",
     "deploy": "electron-builder build --win --x64 --ia32 --publish always"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/syggroup/isat_integrador.git"
+    "url": "https://github.com/syggroup/isat_integrador_plus.git"
   },
   "devDependencies": {
     "electron": "^13.0.1",
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "crypto": "^1.0.1",
     "electron-updater": "^4.3.9",
     "moment": "^2.29.1",
     "pg": "^8.6.0",

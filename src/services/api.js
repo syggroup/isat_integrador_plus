@@ -6,6 +6,7 @@ const api = axios.create({
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),
+  timeout: 60000,
 });
 
 module.exports = api;

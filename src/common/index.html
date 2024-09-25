@@ -23,14 +23,14 @@
                 id="run_generals"
                 onClick="startStopLogs('generals')"
               >
-                Stop Logs
+                Stop
               </button>
               <button
                 class="btn-secondary"
                 id="clear_generals"
                 onClick="clearLogs('generals')"
               >
-                Clear Logs
+                Clear
               </button>
             </div>
           </div>
@@ -46,14 +46,14 @@
                 id="run_vehicles"
                 onClick="startStopLogs('vehicles')"
               >
-                Stop Logs
+                Stop
               </button>
               <button
                 class="btn-secondary"
                 id="clear_vehicles"
                 onClick="clearLogs('vehicles')"
               >
-                Clear Logs
+                Clear
               </button>
             </div>
           </div>
@@ -71,14 +71,14 @@
                 id="run_references"
                 onClick="startStopLogs('references')"
               >
-                Stop Logs
+                Stop
               </button>
               <button
                 class="btn-secondary"
                 id="clear_references"
                 onClick="clearLogs('references')"
               >
-                Clear Logs
+                Clear
               </button>
             </div>
           </div>
@@ -94,14 +94,14 @@
                 id="run_orders"
                 onClick="startStopLogs('orders')"
               >
-                Stop Logs
+                Stop
               </button>
               <button
                 class="btn-secondary"
                 id="clear_orders"
                 onClick="clearLogs('orders')"
               >
-                Clear Logs
+                Clear
               </button>
             </div>
           </div>
@@ -119,14 +119,14 @@
                 id="run_containers"
                 onClick="startStopLogs('containers')"
               >
-                Stop Logs
+                Stop
               </button>
               <button
                 class="btn-secondary"
                 id="clear_containers"
                 onClick="clearLogs('containers')"
               >
-                Clear Logs
+                Clear
               </button>
             </div>
           </div>
@@ -135,26 +135,26 @@
         </div>
         <div class="child-row">
           <div style="display: flex; justify-content: space-between">
-            <h1>Hodometro:</h1>
+            <h1>Boletos/Pesagens:</h1>
             <div style="display: flex">
               <button
                 style="margin-right: 5px"
-                id="run_odometers"
-                onClick="startStopLogs('odometers')"
+                id="run_tickets"
+                onClick="startStopLogs('tickets')"
               >
-                Stop Logs
+                Stop
               </button>
               <button
                 class="btn-secondary"
-                id="clear_odometers"
-                onClick="clearLogs('odometers')"
+                id="clear_tickets"
+                onClick="clearLogs('tickets')"
               >
-                Clear Logs
+                Clear
               </button>
             </div>
           </div>
 
-          <div class="boxLogs" id="boxLogs_odometers"><ul></ul></div>
+          <div class="boxLogs" id="boxLogs_tickets"><ul></ul></div>
         </div>
       </div>
       <div class="row">
@@ -168,7 +168,7 @@
       </div>
     </div>
     <script type="text/javascript">
-      const { ipcRenderer } = require("electron");
+      const { ipcRenderer, app } = require("electron");
       const { v4: uuidv4 } = require("uuid");
 
       const logs = {
@@ -177,7 +177,7 @@
         references: [],
         orders: [],
         generals: [],
-        odometers: [],
+        tickets: [],
         tokens: [],
       };
       const runs = {
@@ -186,7 +186,7 @@
         references: true,
         orders: true,
         generals: true,
-        odometers: true,
+        tickets: true,
         tokens: true,
       };
 
@@ -199,73 +199,6 @@
           createLog(arg.log, arg.type);
         }
       });
-
-      /* ipcRenderer.on("toggle_all_logs", (event, arg) => {
-        runs["vehicles"] = arg.value;
-        runs["references"] = arg.value;
-        runs["orders"] = arg.value;
-        runs["generals"] = arg.value;
-
-        if (arg.value) {
-          document
-            .querySelector(`button#run_vehicles`)
-            .classList.remove("btn-success");
-          document
-            .querySelector(`button#run_references`)
-            .classList.remove("btn-success");
-          document
-            .querySelector(`button#run_orders`)
-            .classList.remove("btn-success");
-          document
-            .querySelector(`button#run_generals`)
-            .classList.remove("btn-success");
-        } else {
-          logs["vehicles"] = [];
-          logs["references"] = [];
-          logs["orders"] = [];
-          logs["generals"] = [];
-
-          const ul_vehicles = document.querySelector("#boxLogs_vehicles ul");
-          const lis_vehicles = ul_vehicles.getElementsByTagName("li");
-
-          const ul_references = document.querySelector(
-            "#boxLogs_references ul"
-          );
-          const lis_references = ul_references.getElementsByTagName("li");
-
-          const ul_orders = document.querySelector("#boxLogs_orders ul");
-          const lis_orders = ul_orders.getElementsByTagName("li");
-
-          const ul_generals = document.querySelector("#boxLogs_generals ul");
-          const lis_generals = ul_generals.getElementsByTagName("li");
-
-          for (var x = lis_vehicles.length - 1; x >= 0; x--) {
-            ul_vehicles.removeChild(lis_vehicles[x]);
-          }
-          for (var x = lis_references.length - 1; x >= 0; x--) {
-            ul_references.removeChild(lis_references[x]);
-          }
-          for (var x = lis_orders.length - 1; x >= 0; x--) {
-            ul_orders.removeChild(lis_orders[x]);
-          }
-          for (var x = lis_generals.length - 1; x >= 0; x--) {
-            ul_generals.removeChild(lis_generals[x]);
-          }
-
-          document
-            .querySelector(`button#run_vehicles`)
-            .classList.add("btn-success");
-          document
-            .querySelector(`button#run_references`)
-            .classList.add("btn-success");
-          document
-            .querySelector(`button#run_orders`)
-            .classList.add("btn-success");
-          document
-            .querySelector(`button#run_generals`)
-            .classList.add("btn-success");
-        }
-      }); */
 
       function createLog(description, type) {
         const ul = document.querySelector(`#boxLogs_${type} ul`);
@@ -306,7 +239,7 @@
         logs[type] = [];
       }
 
-      /* (async function getNomeGeralAndConnectToWs() {
+      (async function getNomeGeralAndConnectToWs() {
         globals.nomegeral = await ipcRenderer.invoke("getNomeGeral");
 
         if (!globals.nomegeral) {
@@ -317,14 +250,18 @@
           });
 
           socket.on("connect", () => {
+            createLog(`(${new Date().toLocaleString()}) - WebSocket conectado`, "generals");
+
             socket.emit("join", [globals.nomegeral]);
           });
 
-          /* socket.on("event", (event) => {
+          socket.on("event", (event) => {
             const notification = {
               title: null,
               body: null,
             };
+
+            const split_datahora = event.datahora.split(" ");
 
             if (
               event.type == "GTIGN" ||
@@ -335,26 +272,23 @@
               event.type == "INSIDETHEFENCE"
             ) {
               notification.title = event.placa + " - " + event.title;
-              notification.body = "Data/Hora: " + event.datahora;
+              notification.body = "Data/Hora: " + split_datahora[0].split("-").reverse().join("/")+" "+split_datahora[1];
             }
 
             if (event.type == "GTHBM") {
               notification.title = event.placa + " - " + event.title;
-              notification.body =
-                "Data/Hora: " +
-                event.datahora +
-                " e Velocidade: " +
-                event.speed +
-                " Km/h";
+              notification.body = "Data/Hora: " + split_datahora[0].split("-").reverse().join("/")+" "+split_datahora[1] + " e Velocidade: " + event.speed + " Km/h";
             }
 
-            //new Notification(notification.title, {
-            //  body: notification.body,
-            //  icon: "../assets/image/logo.png",
-            //});
-          }); */
-      /* }
-      })(); */
+            if (localStorage.getItem("@integrador_isat:notifications") === "true" && notification.title !== null && notification.body !== null) {
+              new Notification(notification.title, {
+                body: notification.body,
+                icon: "../assets/image/logo.png",
+              });
+            }
+          });
+        }
+      })();
     </script>
 
     <div id="notification" class="hidden">
@@ -419,6 +353,15 @@
 
         setTimeout(() => getTokens(), 60000);
       })();
+
+      ipcRenderer.on("change_notifications", () => {
+        const notifications = localStorage.getItem("@integrador_isat:notifications");
+        const new_notifications = notifications === null || notifications === "false" ? "true" : "false";
+
+        localStorage.setItem("@integrador_isat:notifications", new_notifications);
+
+        ipcRenderer.send('status_notifications', new_notifications)
+      });
     </script>
   </body>
 </html>

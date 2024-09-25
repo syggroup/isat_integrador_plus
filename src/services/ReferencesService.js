@@ -73,6 +73,7 @@ class ReferencesService {
             return {
               tipo: r.tipo,
               nome: r.nome,
+              apelido: r.apelido,
               id_cidade: parseInt(r.id_cidade, 10),
               latitude: parseFloat(r.latitude),
               longitude: parseFloat(r.longitude),
@@ -158,6 +159,7 @@ class ReferencesService {
             return {
               tipo: r.tipo,
               nome: r.nome,
+              apelido: '',
               id_cidade: parseInt(r.id_cidade, 10),
               latitude: parseFloat(r.latitude),
               longitude: parseFloat(r.longitude),
@@ -243,6 +245,7 @@ class ReferencesService {
             return {
               tipo: r.tipo,
               nome: r.nome,
+              apelido: r.apelido,
               id_cidade: parseInt(r.id_cidade, 10),
               latitude: parseFloat(r.latitude),
               longitude: parseFloat(r.longitude),
@@ -328,6 +331,7 @@ class ReferencesService {
             return {
               tipo: r.tipo,
               nome: r.nome,
+              apelido: '',
               id_cidade: parseInt(r.id_cidade, 10),
               latitude: parseFloat(r.latitude),
               longitude: parseFloat(r.longitude),
@@ -413,6 +417,7 @@ class ReferencesService {
             return {
               tipo: r.tipo,
               nome: r.nome,
+              apelido: '',
               id_cidade: parseInt(r.id_cidade, 10),
               latitude: parseFloat(r.latitude),
               longitude: parseFloat(r.longitude),
