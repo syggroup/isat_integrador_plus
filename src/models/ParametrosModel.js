@@ -19,7 +19,11 @@ class ParametrosModel {
             WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'MATRIZ'
           ) as token,
           (
-            SELECT parametro_valor
+            SELECT case
+              when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+                then parametro_valor
+                else to_char(current_date - 7, 'DD/MM/YYYY')
+              end as parametro_valor
             FROM sagi_parametros
             WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = 'MATRIZ'
           ) as data_inicial_sinc_isat,
@@ -48,7 +52,11 @@ class ParametrosModel {
               WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'FILIAL${x}'
             ) as token,
             (
-              SELECT parametro_valor
+              SELECT case
+                when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+                  then parametro_valor
+                  else to_char(current_date - 7, 'DD/MM/YYYY')
+                end as parametro_valor
               FROM sagi_parametros
               WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = 'FILIAL${x}'
             ) as data_inicial_sinc_isat,
@@ -144,7 +152,12 @@ class ParametrosModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     const result = await this.db.query(`
-      SELECT parametro_valor, parametro_empresa
+      SELECT case
+        when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+          then parametro_valor
+          else to_char(current_date - 7, 'DD/MM/YYYY')
+        end as parametro_valor,
+        parametro_empresa
       FROM sagi_parametros
       WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT'
     `);
@@ -162,7 +175,12 @@ class ParametrosModel {
     );
 
     const result_2 = await this.db.query(`
-      SELECT parametro_valor, parametro_empresa
+      SELECT case
+        when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+          then parametro_valor
+          else to_char(current_date - 7, 'DD/MM/YYYY')
+        end as parametro_valor,
+        parametro_empresa
       FROM sagi_parametros
       WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT'
     `);
@@ -174,7 +192,7 @@ class ParametrosModel {
             select distinct t.ordem
             from isat_ordem_temp t
             left join ordem o on o.ordem = t.ordem and t.ordem > 0
-            where o.empresa in('${parametro_empresa}', 'TODAS') and o.datasai < '${parametro_valor}'
+            where o.empresa in('${parametro_empresa}', 'TODAS') and o.datasai < '${parametro_valor.split("/").reverse().join("-")}'
           )
         `);
       })

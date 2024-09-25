@@ -2,11 +2,9 @@ appId: com.sagisolutions.sagi_x_isat
 publish:
   provider: "github"
   owner: "syggroup"
-  repo: "isat_integrador"
+  repo: "isat_integrador_plus"
 win:
   target: "nsis"
-  certificateFile: "D:/devel/doc/certificado_assina_binarios.pfx"
-  certificatePassword: "Vlp*253565"
 nsis:
   deleteAppDataOnUninstall: true
   oneClick: true
@@ -15,3 +13,5 @@ nsis:
   include: "./build/installer.nsh"
   createDesktopShortcut: false
   createStartMenuShortcut: false
+artifactBuildStarted: "./utils/hookOnStartBuild.js"
+artifactBuildCompleted: "./utils/hookOnBuildFinished.js"

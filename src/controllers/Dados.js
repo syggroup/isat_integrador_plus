@@ -20,6 +20,14 @@ class Dados {
   getNomeGeral() {
     return this.dados_model.getNomeGeral();
   }
+
+  getCountMenuPermissa(idfuncao) {
+    return this.dados_model.getCountMenuPermissa(idfuncao);
+  }
+
+  getFunctionExists(nome_funcao) {
+    return this.dados_model.getFunctionExists(nome_funcao);
+  }
 }
 
 module.exports = Dados;

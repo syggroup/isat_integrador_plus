@@ -8,6 +8,7 @@ class FornecedoresModel {
     const result = await this.db.query(`
       SELECT 'fornecedor'::text as tipo,
         tiraacento(trim(a.fornecedor)) as nome,
+        tiraacento(trim(a.fanta)) as apelido,
         tiraacento(trim(a.ende)) as endereco,
         tiraacento(trim(a.bairro)) as bairro,
         tiraacento(trim(a.numende)) as numero,
@@ -35,6 +36,7 @@ class FornecedoresModel {
     const result = await this.db.query(`
       SELECT 'fornecedor'::text as tipo,
         tiraacento(trim(a.fornecedor)) as nome,
+        tiraacento(trim(a.fanta)) as apelido,
         tiraacento(trim(a.ende)) as endereco,
         tiraacento(trim(a.bairro)) as bairro,
         tiraacento(trim(a.numende)) as numero,

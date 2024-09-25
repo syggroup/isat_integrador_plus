@@ -61,6 +61,8 @@ class ContainersService {
         token,
       });
 
+      const cacambasHabilitadas = await this.dados.getCountMenuPermissa(64);
+
       const response = await api
         .get(`/v2/${token}/tipo_cacamba`)
         .catch((err) =>
@@ -94,7 +96,7 @@ class ContainersService {
           }
         });
 
-        if (del_tipo_cacambas_in_isat.length > 0) {
+        if (del_tipo_cacambas_in_isat.length > 0 && parseInt(cacambasHabilitadas, 10) > 0) {
           const response = await api
             .post(`/v2/${token}/tipo_cacamba/delete`, {
               registros: del_tipo_cacambas_in_isat,
@@ -199,6 +201,8 @@ class ContainersService {
         nfiliais,
       });
 
+      const cacambasHabilitadas = await this.dados.getCountMenuPermissa(64);
+
       const response = await api
         .get(`/v2/${token}/cacamba`)
         .catch((err) =>
@@ -259,7 +263,7 @@ class ContainersService {
           }
         } */
 
-        while (del_cacambas_in_isat.length > 0) {
+        while (del_cacambas_in_isat.length > 0  && parseInt(cacambasHabilitadas, 10) > 0) {
           const regs = del_cacambas_in_isat.splice(0, 100);
 
           const response = await api

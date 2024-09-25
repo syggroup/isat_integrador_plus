@@ -8,6 +8,7 @@ class ClientesModel {
     const result = await this.db.query(`
       SELECT 'cliente'::text as tipo,
         tiraacento(trim(a.cliente)) as nome,
+        tiraacento(trim(a.fantasia)) as apelido,
         tiraacento(trim(a.ende)) as endereco,
         tiraacento(trim(a.bairro)) as bairro,
         tiraacento(trim(a.numende)) as numero,
@@ -35,6 +36,7 @@ class ClientesModel {
     const result = await this.db.query(`
       SELECT 'cliente'::text as tipo,
         tiraacento(trim(a.cliente)) as nome,
+        tiraacento(trim(a.fantasia)) as apelido,
         tiraacento(trim(a.ende)) as endereco,
         tiraacento(trim(a.bairro)) as bairro,
         tiraacento(trim(a.numende)) as numero,

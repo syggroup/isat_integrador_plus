@@ -34,10 +34,10 @@ const global_config = {
     get: () => global_config.isRunning.value,
     set: (value) => global_config.isRunning.value = value,
   },
-  window_splash: null,
+  // window_splash: null,
 };
 
-function createSplashScreen() {
+/* function createSplashScreen() {
   return new Promise((resolve) => {
     global_config.window_splash = new BrowserWindow({
       icon: nativeImage.createFromPath(global_config.iconpath),
@@ -56,7 +56,7 @@ function createSplashScreen() {
 
     setTimeout(resolve, 2000);
   });
-}
+} */
 
 function createIconAndTray() {
   global_config.icon = nativeImage.createFromPath(global_config.iconpath);
@@ -67,7 +67,7 @@ function createIconAndTray() {
 
   global_config.tray = new Tray(global_config.iconpath);
 
-  global_config.tray.setToolTip("Sagi - Integração iSat");
+  global_config.tray.setToolTip(`Sagi - Integração iSat (${app.getVersion()})`);
   global_config.tray.setContextMenu(
     Menu.buildFromTemplate([
       {
@@ -88,6 +88,18 @@ function createIconAndTray() {
             message: `Atualmente o executável está na versao: ${app.getVersion()}`,
           });
         },
+      },
+      {
+        label: "Notificações",
+        submenu: [
+          {
+            label: "Habilitar/Desabilitar",
+            type: "normal",
+            click: () => {
+              global_config.window.webContents.send("change_notifications");
+            },
+          }
+        ]
       },
       {
         label: "Fechar",
@@ -135,7 +147,7 @@ function createWindow() {
 
   global_config.window.loadFile(path.join(__dirname, "common", "index.html"));
 
-  global_config.window_splash.hide();
+  // global_config.window_splash.hide();
 }
 
 async function verifyIntegrationIsat() {
@@ -219,7 +231,7 @@ async function runAllServices() {
       db,
       app.getVersion(),
       global_config.isRunning
-    ).start();
+    ).start(process.env['SYG_CLOUD'] !== undefined);
   } catch (err) {
     global_config.window.webContents.send("log", {
       log: `(${new Date().toLocaleString()}) - Erro serviço geral: ${
@@ -256,7 +268,6 @@ async function startService() {
       }`,
       type: "generals",
     });
-
     clearTimeout(global_config.timeout_run_all_services);
     clearTimeout(global_config.timeout_verify_sagi_update);
     clearTimeout(global_config.timeout_start_service);
@@ -277,22 +288,24 @@ function automaticCheckForUpdates() {
       }`,
       type: "generals",
     });
-  } finally {
-    clearTimeout(global_config.timeout_automatic_check_for_updates);
-    global_config.timeout_automatic_check_for_updates = setTimeout(
-      () => automaticCheckForUpdates(),
-      1800000
-    );
-  }
+  } //finally {
+    //clearTimeout(global_config.timeout_automatic_check_for_updates);
+    //global_config.timeout_automatic_check_for_updates = setTimeout(
+    //  () => automaticCheckForUpdates(),
+    //  1800000
+    //);
+  //}
 }
 
 app.whenReady().then(async () => {
   try {
-    await createSplashScreen();
+    // await createSplashScreen();
 
     const isUniqueInstance = app.requestSingleInstanceLock();
 
-    if (!isUniqueInstance) {
+    const SYG_CLOUD = process.env['SYG_CLOUD'];
+
+    if (!isUniqueInstance && SYG_CLOUD === undefined) {
       new Notification({
         icon: global_config.iconpath,
         title: "Ops",
@@ -304,6 +317,9 @@ app.whenReady().then(async () => {
       const { host, port, user, password, database } = checkArguments(app);
 
       if (!host || !port || !user || !password || !database) {
+        //if (global_config.window_splash !== null) {
+        //  global_config.window_splash.hide();
+        //}
         dialog
           .showMessageBox({
             type: "error",
@@ -344,11 +360,11 @@ async function loadSplashScreenAndQuitApp() {
 
     setTimeout(async () => {
       try {
-        if (global_config.window_splash !== null) {
-          global_config.window_splash.show();
-        }
+        //if (global_config.window_splash !== null) {
+        //  global_config.window_splash.show();
+        //}
 
-        if (global_config.isRunning.value) {
+        /* if (global_config.isRunning.value) {
           try {
             const db = await new Database().getConnection();
 
@@ -361,12 +377,13 @@ async function loadSplashScreenAndQuitApp() {
               await db.close();
             }
           } catch(err) {}
-        }
+        } */
 
         setTimeout(() => {
           app.isQuiting = true;
           if (process.platform !== "darwin") app.quit();
-        }, global_config.window_splash !== null ? 2000 : 0);
+        }, 0);
+        // }, global_config.window_splash !== null ? 2000 : 0);
       } catch(err) {
         app.isQuiting = true;
         if (process.platform !== "darwin") app.quit();
@@ -404,22 +421,27 @@ autoUpdater.on("update-downloaded", () => {
 });
 
 ipcMain.on("restart_app", async () => {
+  app.isQuiting = true;
   autoUpdater.quitAndInstall(true, false);
 });
 
 ipcMain.handle("getNomeGeral", async () => {
-  const db = await new Database().getConnection();
+  try {
+    const db = await new Database().getConnection();
 
-  if (db) {
-    const nomegeral = await new StartService(
-      global_config.window,
-      db
-    ).getNomeGeral();
+    if (db) {
+      const nomegeral = await new StartService(
+        global_config.window,
+        db
+      ).getNomeGeral();
 
-    await db.close();
+      await db.close();
 
-    return nomegeral;
-  } else {
+      return nomegeral;
+    } else {
+      return 0;
+    }
+  } catch(err) {
     return 0;
   }
 });
@@ -427,15 +449,27 @@ ipcMain.handle("getNomeGeral", async () => {
 ipcMain.handle("getAppVersion", () => app.getVersion());
 
 ipcMain.handle("getTokens", async () => {
-  const db = await new Database().getConnection();
+  try {
+    const db = await new Database().getConnection();
 
-  if (db) {
-    const tokens = await new StartService(global_config.window, db).getTokens();
+    if (db) {
+      const tokens = await new StartService(global_config.window, db).getTokens();
 
-    await db.close();
+      await db.close();
 
-    return tokens;
-  } else {
+      return tokens;
+    } else {
+      return null;
+    }
+  } catch(err) {
     return null;
   }
+});
+
+ipcMain.on("status_notifications", (_event, arg)=> {
+  dialog.showMessageBox({
+    type: "info",
+    title: "Status Notificações",
+    message: `As notificações foram ${arg === "true" ? "habilitadas" : "desabilitadas"}`,
+  });
 });

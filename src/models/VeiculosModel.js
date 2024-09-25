@@ -12,8 +12,8 @@ class VeiculosModel {
         ativo_gps_latitude='${data.latitude}',
         ativo_gps_longitude='${data.longitude}',
         ativo_gps_endereco='${data.endereco}',
-        ativo_gps_ult_data='${data.data}',
-        ativo_gps_ult_hora='${data.hora}',
+        ativo_gps_ult_data=${data.data !== null ? `'${data.data}'` : null},
+        ativo_gps_ult_hora='${data.hora !== null ? data.hora : ''}',
         ativo_rastreador='ISAT'
       WHERE (ativo_rastreador<>'ISAT' OR ativo_rastreador='ISAT') AND ativo_placa = '${data.placa}'
     `);

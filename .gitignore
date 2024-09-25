@@ -6,3 +6,4 @@ test/*
 test/
 src/main_bkp.js
 src/.vscode/bookmarks.json
+utils/sygecom_informatica_ltda.pem

@@ -70,6 +70,7 @@ class OrdersService {
       const ordens = await this.ordens.getOrdens({
         filial,
         data_inicial_sinc_isat,
+        limit: token === 'a9391a16800f5dabe0e0160b9bed9daa' ? 50 : 1000,
       });
 
       ordens.forEach((ordem) => {
@@ -94,7 +95,7 @@ class OrdersService {
       );
 
       while (del_orders_in_isat.length > 0) {
-        const regs = del_orders_in_isat.splice(0, 10);
+        const regs = del_orders_in_isat.splice(0, token === 'a9391a16800f5dabe0e0160b9bed9daa' ? 1 : 10);
 
         const data = {
           registros: regs.map((reg) => {
@@ -146,7 +147,7 @@ class OrdersService {
       }
 
       while (upd_orders_in_isat.length > 0) {
-        const regs = upd_orders_in_isat.splice(0, 10);
+        const regs = upd_orders_in_isat.splice(0, token === 'a9391a16800f5dabe0e0160b9bed9daa' ? 1 : 10);
 
         const data = {
           registros: regs.map((reg) => {
@@ -471,6 +472,7 @@ class OrdersService {
               await this.ordens.retornoIsat({
                 ordem,
                 situacao: situacao.substr(0, 30),
+                movimenta_cacamba,
               });
 
               if (checks.length > 0) {
@@ -541,11 +543,11 @@ class OrdersService {
                 });
               }
 
-              if (situacao.indexOf("encontrada") !== -1) {
-                this.writeLog(
-                  `(${new Date().toLocaleString()} / ${filial}) - Status da Ordem:${ordem}:${situacao}`
-                );
-              }
+              // if (situacao.indexOf("ENCONTRADA") !== -1) {
+              //  this.writeLog(
+              //    `(${new Date().toLocaleString()} / ${filial}) - Status da Ordem:${ordem}:${situacao}`
+              //  );
+              // }
             })
           );
         }

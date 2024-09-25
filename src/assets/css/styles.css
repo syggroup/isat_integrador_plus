@@ -114,3 +114,16 @@ ul {
 #message {
   color: black;
 }
+
+
+@media only screen and (max-width: 990px){
+  div.row {
+    flex-direction: column;
+    height: 600px;
+  }
+  
+  div.child-row {
+    width: 100%;
+    flex: 1;
+  }
+}
