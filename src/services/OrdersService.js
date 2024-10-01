@@ -288,11 +288,14 @@ class OrdersService {
             {
               tipo: referencia[0].tipo,
               nome: referencia[0].nome,
+              apelido: referencia[0].apelido,
               id_cidade: parseInt(referencia[0].id_cidade, 10),
               latitude: parseFloat(referencia[0].latitude),
               longitude: parseFloat(referencia[0].longitude),
               codigo: parseInt(referencia[0].codigo, 10),
               status: referencia[0].status,
+              cpf_cnpj: referencia[0].cpf_cnpj,
+              tp: referencia[0].tp,
               ...(referencia[0].endereco && {
                 endereco: referencia[0].endereco,
               }),
@@ -336,8 +339,8 @@ class OrdersService {
 
           if (!retorno_ref.erro) {
             await this.sagiIsatSinc.insert({
-              codigo: parseInt(referencia[0].codigo, 10),
-              type: referencia[0].tipo,
+              codigo: parseInt(num_col, 10) === 0 ? parseInt(referencia[0].codigo, 10) : referencia[0].sr_recno,
+              type: parseInt(num_col, 10) === 0 ? referencia[0].tipo : 'FORNECEDOR-ENDE',
               token,
             });
 

@@ -79,6 +79,8 @@ class ReferencesService {
               longitude: parseFloat(r.longitude),
               codigo: parseInt(r.codigo, 10),
               status: r.status,
+              cpf_cnpj: r.cpf_cnpj,
+              tp: r.tp,
               ...(r.endereco && { endereco: r.endereco }),
               ...(r.bairro && { bairro: r.bairro }),
               ...(r.numero && { numero: r.numero }),
@@ -165,6 +167,9 @@ class ReferencesService {
               longitude: parseFloat(r.longitude),
               codigo: parseInt(r.codigo, 10),
               status: r.status,
+              num_col: parseInt(r.num_col, 10),
+              cpf_cnpj: r.cpf_cnpj,
+              tp: r.tp,
               ...(r.endereco && { endereco: r.endereco }),
               ...(r.bairro && { bairro: r.bairro }),
               ...(r.numero && { numero: r.numero }),
@@ -172,7 +177,6 @@ class ReferencesService {
               ...(r.cep && { cep: parseInt(r.cep, 10) }),
               ...(r.data_nasc && { data_nasc: r.data_nasc }),
               ...(r.email && { email: r.email }),
-              ...(r.num_col && { num_col: parseInt(r.num_col, 10) }),
               ...(r.tel1 && { tel1: r.tel1 }),
               ...(r.tel2 && { tel2: r.tel2 }),
             };
@@ -200,8 +204,8 @@ class ReferencesService {
             retornos.map(async (retorno) => {
               if (!retorno.erro) {
                 await this.sagiIsatSinc.insert({
-                  codigo: retorno.registro.codigo,
-                  type: "FORNECEDOR",
+                  codigo: regs.filter(r => parseInt(r.codigo, 10) === parseInt(retorno.registro.codigo, 10) && parseInt(r.num_col, 10) === parseInt(retorno.registro.num_col, 10))[0].sr_recno,
+                  type: "FORNECEDOR-ENDE",
                   token,
                 });
               } else {
@@ -251,6 +255,8 @@ class ReferencesService {
               longitude: parseFloat(r.longitude),
               codigo: parseInt(r.codigo, 10),
               status: r.status,
+              cpf_cnpj: r.cpf_cnpj,
+              tp: r.tp,
               ...(r.endereco && { endereco: r.endereco }),
               ...(r.bairro && { bairro: r.bairro }),
               ...(r.numero && { numero: r.numero }),
@@ -337,6 +343,8 @@ class ReferencesService {
               longitude: parseFloat(r.longitude),
               codigo: parseInt(r.codigo, 10),
               status: r.status,
+              cpf_cnpj: r.cpf_cnpj,
+              tp: r.tp,
               ...(r.endereco && { endereco: r.endereco }),
               ...(r.bairro && { bairro: r.bairro }),
               ...(r.numero && { numero: r.numero }),

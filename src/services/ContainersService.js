@@ -24,6 +24,12 @@ class ContainersService {
         tokens.map((token) => this.manageTypeContainers(token))
       );
 
+      const count = await this.cacambas.getCacambasWithChr13OrChr10();
+
+      if (count > 0) {
+        await this.cacambas.updateCacambasWithChr13OrChr10();
+      }
+
       await Promise.all(
         tokens.map((token) => this.manageContainers(token, nfiliais))
       );
@@ -230,38 +236,6 @@ class ContainersService {
             del_cacambas_in_isat.push({ placa: ci.placa });
           }
         });
-
-        /* if (del_cacambas_in_isat.length > 0) {
-          const response = await api
-            .post(`/v2/${token}/cacamba/delete`, {
-              registros: del_cacambas_in_isat,
-            })
-            .catch((err) =>
-              this.writeLog(
-                `(${new Date().toLocaleString()} / ${filial}) - Erro requisição deleta Caçambas Api Isat: ${
-                  err.response
-                    ? `${err.response.status} - ${JSON.stringify(
-                        err.response.data
-                      )}`
-                    : err.message
-                }`
-              )
-            );
-
-          if (response && response.status === 200) {
-            const registros = response.data;
-
-            registros.forEach((reg) => {
-              if (reg.erro) {
-                this.writeLog(
-                  `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
-                    reg.registro.placa
-                  }:DELETE:ERRO:${reg.erro}`
-                );
-              }
-            });
-          }
-        } */
 
         while (del_cacambas_in_isat.length > 0  && parseInt(cacambasHabilitadas, 10) > 0) {
           const regs = del_cacambas_in_isat.splice(0, 100);

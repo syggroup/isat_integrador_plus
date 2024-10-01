@@ -54,10 +54,10 @@ class CacambasModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const branches = await this.getBranchesWithTheSameToken(token, nfiliais);
     const result = await this.db.query(`
-      SELECT CASE WHEN forcli = 'F' THEN 'fornecedor' WHEN forcli = 'C' THEN 'cliete' ELSE '' END as tipo_referencia,
+      SELECT CASE WHEN forcli = 'F' THEN 'fornecedor' WHEN forcli = 'C' THEN 'cliente' ELSE '' END as tipo_referencia,
         a.codfor::text as codigo,
         0::text as num_col,
-        trim(numero)::text as numero,
+        trim(tiraacento(numero))::text as numero,
         b.id::text as tipo_cacamba,
         b.descricao as desc_tipo_cacamba,
         coalesce(c.sr_recno, 0) > 0 as atualizado
@@ -75,10 +75,22 @@ class CacambasModel {
   async update(data) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
+    const result_old = await this.db.query(`SELECT codfor FROM containe WHERE trim(tiraacento(numero)) = '${data.placa}' LIMIT 1`);
+
+    if (result_old[1].rows.length === 0) {
+      return 0;
+    }
+
+    if (parseInt(result_old[1].rows[0].codfor, 10) === parseInt(data.codigo, 10)) {
+      return 1;
+    }
+
+    let result = null;
+
     if (parseInt(data.codigo, 10) === 0) {
-      const result = await this.db.query(`
+      result = await this.db.query(`
         UPDATE containe
-        SET codfor=${data.codigo},
+        SET codfor=0,
           datasai = null,
           status = 'R',
           forcli = '',
@@ -87,11 +99,10 @@ class CacambasModel {
           retorno = current_date,
           placa = '',
 				  motorista = ''
-        WHERE trim(numero) = '${data.placa}'
+        WHERE trim(tiraacento(numero)) = '${data.placa}'
       `);
-      return result[1].rowCount;
     } else {
-      const result2 = await this.db.query(`
+      result = await this.db.query(`
         UPDATE containe
         SET codfor=${data.codigo},
           datasai = ${data.data ? `'${data.data}'` : 'null'},
@@ -99,10 +110,55 @@ class CacambasModel {
 				  forcli = '${data.tipo_referencia.substr(0, 1)}',
 				  fornecedor = (select ${data.tipo_referencia.substr(0, 1) === 'F' ? 'fornecedor' : 'cliente'} from ${data.tipo_referencia.substr(0, 1) === 'F' ? 'cag_for' : 'cag_cli'} where ${data.tipo_referencia.substr(0, 1) === 'F' ? 'codfor' : 'codcli'} = ${data.codigo} limit 1),
           retorno = null
-        WHERE trim(numero) = '${data.placa}'
+        WHERE trim(tiraacento(numero)) = '${data.placa}'
       `);
-      return result2[1].rowCount;
     }
+
+    if (parseInt(data.numero_ordem, 10) !== 0 && data.placa_veiculo && data.for_cli && data.filial && data.hcont && data.observa) {
+      await this.db.query(`
+        INSERT INTO sagi_his_containe (
+          hcont_numero,
+          hcont_tipo,
+          hcont_observacao,
+          hcont_forcli,
+          hcont_codfor,
+          hcont_ordem,
+          hcont_placa,
+          hcont_data,
+          hcont_hora,
+          hcont_usuario,
+          hcont_empresa
+        ) VALUES (
+          (select numero from containe WHERE trim(tiraacento(numero)) = '${data.placa}' limit 1),
+          '${data.hcont}',
+          '${data.observa}'||' NA ORDEM DE COLETA NO DIA '||'${data.data}',
+          '${data.for_cli}',
+          ${parseInt(data.codigo, 10)},
+          '${data.numero_ordem}',
+          '${data.placa_veiculo}',
+          '${data.data}',
+          '${data.hora}',
+          'DRIVERSAT',
+          '${data.filial}'
+        );
+      `);
+    }
+
+    return result[1].rowCount;
+  }
+
+  async getWithChr13OrChr10() {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    const result = await this.db.query(`SELECT count(*) FROM containe WHERE POSITION(chr(10) IN numero) > 0 OR POSITION(chr(13) IN numero) > 0 OR POSITION('"' IN numero) > 0`);
+    return result[1].rows[0].count;
+  }
+
+  async updateWithChr13OrChr10() {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+    const result_u_1 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, chr(10), '') WHERE POSITION(chr(10) IN numero) > 0`);
+    const result_u_2 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, chr(10), '') WHERE POSITION(chr(10) IN numero) > 0`);
+    const result_u_3 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, '"', '') WHERE POSITION('"' IN numero) > 0`);
+    return result_u_1[1].rowCount + result_u_2[1].rowCount + result_u_3[1].rowCount;
   }
 }
 
