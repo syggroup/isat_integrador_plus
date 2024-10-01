@@ -6,7 +6,7 @@ class SagiIsatSincModel {
   async getSrRecnoFromContaine(codigo) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(
-      `SELECT sr_recno FROM containe WHERE numero = '${codigo}' LIMIT 1`
+      `SELECT sr_recno FROM containe WHERE trim(tiraacento(numero)) = trim('${codigo}') LIMIT 1`
     );
     return result[1].rows[0].sr_recno;
   }
