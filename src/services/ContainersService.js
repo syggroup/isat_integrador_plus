@@ -196,7 +196,7 @@ class ContainersService {
     }
   }
 
-  async manageContainers({ token, movimenta_cacamba, filial }, nfiliais) {
+  async manageContainers({ token, filial }, nfiliais) {
     try {
       const del_cacambas_in_isat = [];
       const upd_cacambas_in_isat = [];
@@ -229,12 +229,15 @@ class ContainersService {
         registros.forEach((reg) => cacambas_isat.push(reg));
 
         cacambas_isat.forEach((ci) => {
+          const index_find_cacamba = cacambas_sagi.findIndex((cs) => cs.numero === ci.placa);
           if (
             !ci.rastreada &&
-            cacambas_sagi.findIndex((cs) => cs.numero === ci.placa) === -1
+            index_find_cacamba === -1
           ) {
             del_cacambas_in_isat.push({ placa: ci.placa });
           }
+
+          ci.movimenta_cacamba = !ci.rastreada && index_find_cacamba === -1 ? false : cacambas_sagi[index_find_cacamba].movimenta_cacamba;
         });
 
         while (del_cacambas_in_isat.length > 0  && parseInt(cacambasHabilitadas, 10) > 0) {
@@ -272,22 +275,20 @@ class ContainersService {
         }
       }
 
-      if (movimenta_cacamba) {
-        await Promise.all(
-          cacambas_isat.map(async (registro) => {
-            const count = await this.cacambas.update(registro);
+      await Promise.all(
+        cacambas_isat.filter(ci => ci.movimenta_cacamba).map(async (registro) => {
+          const count = await this.cacambas.update(registro);
 
-            if (count === 0) {
-              this.writeLog(
-                `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
-                  registro.placa
-                }:ERRO:Caçamba não encontrada na base de dados
-                `
-              );
-            }
-          })
-        );
-      }
+          if (count === 0) {
+            this.writeLog(
+              `(${new Date().toLocaleString()} / ${filial}) - Caçamba:${
+                registro.placa
+              }:ERRO:Caçamba não encontrada na base de dados
+              `
+            );
+          }
+        })
+      );
 
       cacambas_sagi.forEach((cs) => {
         if (!cs.atualizado) {
