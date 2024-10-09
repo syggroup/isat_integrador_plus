@@ -2,7 +2,7 @@
   "name": "integrador_isat3",
   "description": "Sistema para integração do Sagi com iSat",
   "author": "Sygecom Informática Ltda.",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "main": "src/main.js",
   "license": "MIT",
   "scripts": {

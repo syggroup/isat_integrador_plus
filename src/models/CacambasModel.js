@@ -60,7 +60,12 @@ class CacambasModel {
         trim(tiraacento(numero))::text as numero,
         b.id::text as tipo_cacamba,
         b.descricao as desc_tipo_cacamba,
-        coalesce(c.sr_recno, 0) > 0 as atualizado
+        coalesce(c.sr_recno, 0) > 0 as atualizado,
+        (
+          SELECT case when substr(parametro_valor, 1, 1) = '5' then true else false end
+          FROM sagi_parametros
+          WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = a.empresa
+        ) as movimenta_cacamba
       FROM containe a
       LEFT JOIN sagi_isat_sinc c ON c.tipo='CONTAINE'
         AND c.codigo=a.sr_recno
