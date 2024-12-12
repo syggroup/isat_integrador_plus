@@ -192,6 +192,7 @@
 
       const globals = {
         nomegeral: null,
+        is_cloud: true,
       };
 
       ipcRenderer.on("log", (event, arg) => {
@@ -239,7 +240,15 @@
         logs[type] = [];
       }
 
-      (async function getNomeGeralAndConnectToWs() {
+      (async function checkIsCloud() {
+        globals.is_cloud = await ipcRenderer.invoke("checkIsCloud");
+
+        if (globals.is_cloud === false) {
+          getNomeGeralAndConnectToWs();
+        }
+      })();
+
+      async function getNomeGeralAndConnectToWs() {
         globals.nomegeral = await ipcRenderer.invoke("getNomeGeral");
 
         if (!globals.nomegeral) {
@@ -288,7 +297,7 @@
             }
           });
         }
-      })();
+      };
     </script>
 
     <div id="notification" class="hidden">

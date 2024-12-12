@@ -99,7 +99,8 @@ function createIconAndTray() {
               global_config.window.webContents.send("change_notifications");
             },
           }
-        ]
+        ],
+        visible: process.env['SYG_CLOUD'] === undefined,
       },
       {
         label: "Fechar",
@@ -447,6 +448,10 @@ ipcMain.handle("getNomeGeral", async () => {
 });
 
 ipcMain.handle("getAppVersion", () => app.getVersion());
+
+ipcMain.handle("checkIsCloud", () => {
+  return process.env['SYG_CLOUD'] !== undefined;
+});
 
 ipcMain.handle("getTokens", async () => {
   try {

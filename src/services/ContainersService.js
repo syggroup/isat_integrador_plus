@@ -300,6 +300,7 @@ class ContainersService {
             placa: cs.numero,
             tipo_cacamba: parseInt(cs.tipo_cacamba, 10),
             desc_tipo_cacamba: cs.desc_tipo_cacamba,
+            status: cs.status,
           });
         }
       });

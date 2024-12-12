@@ -167,6 +167,7 @@ class OrdersService {
               sr_recno: reg.sr_recno,
               tipo_retorno: reg.tipo_retorno,
               tipo_ordem: reg.tipo_ordem,
+              tipo_cacamba: reg.tipo_cacamba,
             };
           }),
         };

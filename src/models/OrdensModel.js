@@ -22,7 +22,8 @@ class OrdensModel {
             trim(b.obs1) as obs,
             trim(b.empresa) as filial,
             trim(b.tipo_ret) as tipo_retorno,
-            case when b.servico then 'SERVICO' when b.cli_for='COLETA' then 'COLETA' else 'EMBARQUE' end as tipo_ordem
+            case when b.servico then 'SERVICO' when b.cli_for='COLETA' then 'COLETA' else 'EMBARQUE' end as tipo_ordem,
+            trim(b.cacamba) as tipo_cacamba
           FROM isat_ordem_temp a
           LEFT JOIN ordem b on a.ordem=b.ordem
           LEFT JOIN mot as c on c.codmot=b.codmot
@@ -52,7 +53,8 @@ class OrdensModel {
             '' as obs,
             '' as filial,
             '' as tipo_retorno,
-            '' as tipo_ordem
+            '' as tipo_ordem,
+            '' as tipo_cacamba
           FROM isat_ordem_temp a
           WHERE a.ordem>0 AND a.acao='DELETE'
           ORDER BY 11 DESC, 4 DESC
