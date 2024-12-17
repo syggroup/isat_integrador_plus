@@ -66,7 +66,7 @@ class CacambasModel {
           FROM sagi_parametros
           WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = a.empresa
         ) as movimenta_cacamba,
-        case when trim(a.situacao) != 'INATIVA' then 'true' else 'false' as status
+        case when trim(a.situacao) != 'INATIVA' then 'true' else 'false' end as status
       FROM containe a
       LEFT JOIN sagi_isat_sinc c ON c.tipo='CONTAINE'
         AND c.codigo=a.sr_recno
