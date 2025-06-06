@@ -227,9 +227,8 @@ class ContainersService {
         const registros = response.data;
 
         registros.forEach((reg) => cacambas_isat.push(reg));
-
         cacambas_isat.forEach((ci) => {
-          const index_find_cacamba = cacambas_sagi.findIndex((cs) => cs.numero === ci.placa);
+          const index_find_cacamba = cacambas_sagi.findIndex((cs) => cs.numero == ci.placa);
           if (
             !ci.rastreada &&
             index_find_cacamba === -1
@@ -238,6 +237,8 @@ class ContainersService {
           }
 
           ci.movimenta_cacamba = !ci.rastreada && index_find_cacamba === -1 ? false : cacambas_sagi[index_find_cacamba].movimenta_cacamba;
+          // ci.movimenta_cacamba = !ci.rastreada && index_find_cacamba === -1 ? false : true;
+        
         });
 
         while (del_cacambas_in_isat.length > 0  && parseInt(cacambasHabilitadas, 10) > 0) {
@@ -301,6 +302,7 @@ class ContainersService {
             tipo_cacamba: parseInt(cs.tipo_cacamba, 10),
             desc_tipo_cacamba: cs.desc_tipo_cacamba,
             status: cs.status,
+            tags: cs.tags,
           });
         }
       });

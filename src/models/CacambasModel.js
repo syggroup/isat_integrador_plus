@@ -52,29 +52,50 @@ class CacambasModel {
 
   async get({ token, nfiliais }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
     const branches = await this.getBranchesWithTheSameToken(token, nfiliais);
-    const result = await this.db.query(`
-      SELECT CASE WHEN forcli = 'F' THEN 'fornecedor' WHEN forcli = 'C' THEN 'cliente' ELSE '' END as tipo_referencia,
-        a.codfor::text as codigo,
-        0::text as num_col,
-        trim(tiraacento(numero))::text as numero,
-        b.id::text as tipo_cacamba,
-        b.descricao as desc_tipo_cacamba,
-        coalesce(c.sr_recno, 0) > 0 as atualizado,
-        (
-          SELECT case when substr(parametro_valor, 1, 1) = '5' then true else false end
-          FROM sagi_parametros
-          WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = a.empresa
-        ) as movimenta_cacamba,
-        case when trim(a.situacao) != 'INATIVA' then 'true' else 'false' end as status
-      FROM containe a
-      LEFT JOIN sagi_isat_sinc c ON c.tipo='CONTAINE'
-        AND c.codigo=a.sr_recno
-        AND c.token = '${token}'
-      LEFT JOIN sagi_tipo_container b ON trim(a.tipo) = trim(b.descricao) ${
-        " WHERE a.empresa in ('" + branches.join("','") + "')"
-      }
-    `);
+
+    // Verifica se a tabela 'containe_tag' existe
+    const checkTable = await this.db.query(
+      `SELECT to_regclass('public.containe_tag') IS NOT NULL AS exists`
+    );
+    const tableExists = checkTable[1].rows[0].exists;
+
+    // Monta o trecho da subconsulta para tags (se existir)
+    const tagsField = tableExists
+      ? `coalesce((
+                  SELECT jsonb_agg(trim(ct.tag) ORDER BY ct.tag)
+                  FROM containe_tag ct
+                  WHERE ct.numero = a.numero
+                ),'[]') AS tags`
+      : `'[]' AS tags`;
+
+    // Monta a query completa
+    const query = `
+    SELECT
+      CASE WHEN forcli = 'F' THEN 'fornecedor' WHEN forcli = 'C' THEN 'cliente' ELSE '' END AS tipo_referencia,
+      a.codfor::text AS codigo,
+      0::text AS num_col,
+      trim(tiraacento(numero))::text AS numero,
+      b.id::text AS tipo_cacamba,
+      b.descricao AS desc_tipo_cacamba,
+      coalesce(c.sr_recno, 0) > 0 AS atualizado,
+      (
+        SELECT CASE WHEN substr(parametro_valor, 1, 1) = '5' THEN true ELSE false END
+        FROM sagi_parametros
+        WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = a.empresa
+      ) AS movimenta_cacamba,
+      CASE WHEN trim(a.situacao) != 'INATIVA' THEN 'true' ELSE 'false' END AS status,
+      ${tagsField}
+    FROM containe a
+    LEFT JOIN sagi_isat_sinc c ON c.tipo = 'CONTAINE'
+      AND c.codigo = a.sr_recno
+      AND c.token = '${token}'
+    LEFT JOIN sagi_tipo_container b ON trim(a.tipo) = trim(b.descricao)
+    WHERE a.empresa IN ('${branches.join("','")}')
+  `;
+
+    const result = await this.db.query(query);
     return result[1].rows;
   }
 
