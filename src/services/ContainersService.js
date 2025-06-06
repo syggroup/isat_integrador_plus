@@ -229,7 +229,7 @@ class ContainersService {
         registros.forEach((reg) => cacambas_isat.push(reg));
 
         cacambas_isat.forEach((ci) => {
-          const index_find_cacamba = cacambas_sagi.findIndex((cs) => cs.numero === ci.placa);
+          const index_find_cacamba = cacambas_sagi.findIndex((cs) => cs.numero.toString() === ci.placa.toString() || cs.numero.toString() == ci.placa.toString());
           if (
             !ci.rastreada &&
             index_find_cacamba === -1

@@ -12,13 +12,13 @@ class OrdensModel {
             case when b.cli_for='COLETA' then 'FORNECEDOR' else 'CLIENTE' end as tipo,
             a.ordem,
             b.datasai::text,
-            trim(b.placa) as placa,
+            case when d.ativo_rastreador='ISAT' then trim(b.placa) else '' end as placa,
             b.codfor as codigo,
             b.num_col,
             b.sequencia,
             trim(b.horaapa) as horasai,
             trim(b.status) as status,
-            trim(c.numcnh) as cnh,
+            case when length(regexp_replace(c.numcnh, '\D', '', 'g')) = 11 then coalesce(trim(c.numcnh), '') else '' end as cnh,
             trim(b.obs1) as obs,
             trim(b.empresa) as filial,
             trim(b.tipo_ret) as tipo_retorno,
@@ -29,9 +29,8 @@ class OrdensModel {
           LEFT JOIN mot as c on c.codmot=b.codmot
           LEFT JOIN sagi_cad_ativo as d on d.ativo_placa=b.placa
           WHERE a.ordem>0
-            and (a.acao='DELETE' or (a.acao<>'DELETE' and b.codmot>0 and d.ativo_rastreador='ISAT'))
-            and case when a.acao<>'DELETE' then (b.empresa='${filial}' or b.empresa='TODAS') else true end
-            and length(regexp_replace(c.numcnh, '\D', '', 'g')) = 11
+            and a.acao<>'DELETE'
+            and (b.empresa='${filial}' or b.empresa='TODAS')
             ${
               data_inicial_sinc_isat
                 ? ` AND b.datasai >= '${data_inicial_sinc_isat.split("/").reverse().join("-")}'`
@@ -57,8 +56,10 @@ class OrdensModel {
             '' as tipo_cacamba
           FROM isat_ordem_temp a
           WHERE a.ordem>0 AND a.acao='DELETE'
-          ORDER BY 11 DESC, 4 DESC
-        ) z LIMIT ${limit}
+        ) z
+        GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+        ORDER BY 1 ASC
+        LIMIT ${limit}
     `);
     return result[1].rows;
   }
@@ -75,7 +76,6 @@ class OrdensModel {
             ? ` AND a.datasai >= '${data_inicial_sinc_isat.split("/").reverse().join("-")}'`
             : ""
         }
-        AND trim(a.placa)<>''
         AND a.ordem>0
         AND (a.empresa='TODAS' or a.empresa='${filial}')
         AND a.status<>'F'
@@ -84,7 +84,7 @@ class OrdensModel {
     return result[1].rows;
   }
 
-  async updateForDelete({ filial }) {
+  /* async updateForDelete({ filial }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`
       UPDATE isat_ordem_temp as a
@@ -92,13 +92,16 @@ class OrdensModel {
       WHERE ordem IN(
         SELECT z.ordem FROM ordem as z
         LEFT JOIN isat_ordem_temp as x on x.ordem=z.ordem
-        WHERE z.codmot=0 AND coalesce(x.ordem,0)>0 AND (z.empresa='${filial}' or z.empresa='TODAS')
+        LEFT JOIN sagi_cad_ativo as d on d.ativo_placa=z.placa
+        WHERE (CASE WHEN z.placa <> '' THEN d.ativo_rastreador<>'ISAT' ELSE false END)
+          AND coalesce(x.ordem,0)>0
+          AND (z.empresa='${filial}' or z.empresa='TODAS')
       )
     `);
     return result[1].rowCount;
-  }
+  } */
 
-  async updateForDelete2() {
+  /* async updateForDelete2() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(`
       DELETE FROM isat_ordem_temp as a
@@ -106,19 +109,18 @@ class OrdensModel {
         SELECT z.ordem
         FROM isat_ordem_temp as z
         LEFT JOIN ordem as b on b.ordem=z.ordem
-        LEFT JOIN mot as c on b.codmot>0 AND c.codmot=b.codmot
-        LEFT JOIN sagi_cad_ativo as d on trim(b.placa)<>'' AND d.ativo_placa=b.placa
+        LEFT JOIN mot as c on c.codmot=b.codmot
+        LEFT JOIN sagi_cad_ativo as d on d.ativo_placa=b.placa
         WHERE z.acao<>'DELETE'
           AND (
-            coalesce(b.codmot,0)=0 OR
-            trim(coalesce(d.ativo_placa,''))='' OR
-            d.ativo_rastreador<>'ISAT' OR
-            LENGTH(trim(coalesce(c.numcnh,'')))<>11
+            CASE WHEN trim(b.placa) <> '' THEN d.ativo_rastreador<>'ISAT' ELSE false END AND
+            CASE WHEN trim(coalesce(c.numcnh,'')) <> '' THEN LENGTH(trim(coalesce(c.numcnh,'')))<>11 ELSE false END
           )
+        GROUP BY 1
       )
     `);
     return result[1].rowCount;
-  }
+  } */
 
   async delete({ sr_recno }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
@@ -282,8 +284,8 @@ class OrdensModel {
             km.tipo === "IDA"
               ? `UPDATE ordem SET kmsai=${km.valor} WHERE ordem=${ordem}`
               : km.tipo === "VOLTA"
-              ? `UPDATE ordem SET kmchefor=${km.valor}, kmsaifor=${km.valor} WHERE ordem=${ordem}`
-              : `UPDATE ordem SET kmche=${km.valor} WHERE ordem=${ordem}`
+                ? `UPDATE ordem SET kmchefor=${km.valor}, kmsaifor=${km.valor} WHERE ordem=${ordem}`
+                : `UPDATE ordem SET kmche=${km.valor} WHERE ordem=${ordem}`
           }
         `);
 
@@ -344,6 +346,70 @@ class OrdensModel {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     return 0;
+  }
+
+  async setRoutingOrder({ ordem, placa, codigo, data }) {
+    await this.db.query("SET client_encoding TO 'UTF-8'");
+
+    const result_ordem = await this.db.query(`SELECT ordem FROM ordem WHERE ordem=${ordem} and status<>'F'`);
+
+    if (result_ordem[1].rowCount === 0) {
+      return 0;
+    }
+
+    const result_placa = await this.db.query(`SELECT ativo_placa FROM sagi_cad_ativo WHERE trim(ativo_placa)='${placa}'`);
+
+    if (result_placa[1].rowCount === 0) {
+      return 0;
+    }
+
+    const result_motorista = await this.db.query(`SELECT codmot, motorista FROM mot WHERE codmot=${codigo}`);
+
+    if (result_motorista[1].rowCount === 0) {
+      return 0;
+    }
+
+    await this.db.query(`
+      UPDATE ordem
+      SET status = 'A',
+        obs = 'AGUARDANDO',
+        codmot = ${codigo},
+        motorista = '${result_motorista[1].rows[0].motorista}',
+        placa = '${placa}',
+        datasai = '${data}',
+        sequencia = (select coalesce(max(sequencia), 0)+1 from ordem where datasai = '${data}' and placa = '${placa}')
+      WHERE ordem = ${ordem}
+    `);
+
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
+    return 1;
+  }
+
+  async clearChecks({ ordem, type }) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
+    if (type === 'all') {
+      await this.db.query(`DELETE from sagi_isat_imprevisto_ordem WHERE ordem=${ordem} AND coalesce(imprevisto, false) = false`);
+    } else {
+      await this.db.query(`DELETE from sagi_isat_imprevisto_ordem WHERE ordem=${ordem} AND coalesce(imprevisto, false) = false AND motivo = 'CHECK-OUT'`);
+    }
+
+    return true;
+  }
+
+  async clearImprevistos({ ordem }) {
+    await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
+    await this.db.query(`DELETE from sagi_isat_imprevisto_ordem WHERE ordem=${ordem} AND coalesce(imprevisto, false) = true`);
+
+    return true;
+  }
+
+  async clearCacambas({ ordem, type }) {
+    await this.db.query(`UPDATE ordem SET ${type === "IDA" ? "numero" : "numeroret"}='' WHERE ordem=${ordem}`);
+
+    return true;
   }
 }
 

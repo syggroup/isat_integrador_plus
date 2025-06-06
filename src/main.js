@@ -34,6 +34,14 @@ const global_config = {
     get: () => global_config.isRunning.value,
     set: (value) => global_config.isRunning.value = value,
   },
+  filiais_isat: {
+    value: {},
+    get: () => global_config.filiais_isat.value,
+    set: (value) => global_config.filiais_isat.value = value,
+  },
+  loadSplashScreenAndQuitApp: {
+    quit: loadSplashScreenAndQuitApp
+  }
   // window_splash: null,
 };
 
@@ -157,7 +165,7 @@ async function verifyIntegrationIsat() {
 
     global_config.verifica_integracao_isat = true;
 
-    await new StartService(global_config.window, db).verificaIntegracaoIsat();
+    await new StartService(global_config.window, db, null, {}, global_config.filiais_isat).verificaIntegracaoIsat();
 
     await db.close();
   } catch (err) {
@@ -231,7 +239,9 @@ async function runAllServices() {
       global_config.window,
       db,
       app.getVersion(),
-      global_config.isRunning
+      global_config.isRunning,
+      global_config.filiais_isat,
+      global_config.loadSplashScreenAndQuitApp,
     ).start(process.env['SYG_CLOUD'] !== undefined);
   } catch (err) {
     global_config.window.webContents.send("log", {
@@ -252,7 +262,7 @@ async function runAllServices() {
 async function startService() {
   try {
     if (!global_config.verifica_integracao_isat) {
-      verifyIntegrationIsat();
+      await verifyIntegrationIsat();
     }
 
     if (!global_config.verifica_data_inicial_sinc_isat) {

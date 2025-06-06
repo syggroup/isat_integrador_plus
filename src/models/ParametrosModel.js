@@ -11,12 +11,12 @@ class ParametrosModel {
           (
             SELECT parametro_valor
             FROM sagi_parametros
-            WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'MATRIZ'
+            WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'MATRIZ' LIMIT 1
           ) as usa,
           (
             SELECT parametro_valor
             FROM sagi_parametros
-            WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'MATRIZ'
+            WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'MATRIZ' LIMIT 1
           ) as token,
           (
             SELECT case
@@ -25,14 +25,18 @@ class ParametrosModel {
                 else to_char(current_date - 7, 'DD/MM/YYYY')
               end as parametro_valor
             FROM sagi_parametros
-            WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = 'MATRIZ'
+            WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = 'MATRIZ' LIMIT 1
           ) as data_inicial_sinc_isat,
           (
-            SELECT case when substr(parametro_valor, 1, 1) = '5' then true else false end
-            FROM sagi_parametros
-            WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = 'MATRIZ'
+            SELECT EXISTS (
+              SELECT 1
+              FROM sagi_parametros
+              WHERE parametro_parametro = 'INFORMA_CACAMBAS'
+                AND substr(parametro_valor, 1, 1) = '5'
+            )
           ) as movimenta_cacamba,
-          (select 'MATRIZ')::text as filial
+          (select 'MATRIZ')::text as filial,
+          (select nomegeral from dados) as idempresa
       )
     `;
 
@@ -44,12 +48,12 @@ class ParametrosModel {
             (
               SELECT parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'FILIAL${x}'
+              WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'FILIAL${x}' LIMIT 1
             ) as usa,
             (
               SELECT parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'FILIAL${x}'
+              WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'FILIAL${x}' LIMIT 1
             ) as token,
             (
               SELECT case
@@ -58,14 +62,18 @@ class ParametrosModel {
                   else to_char(current_date - 7, 'DD/MM/YYYY')
                 end as parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = 'FILIAL${x}'
+              WHERE parametro_parametro = 'DATA_INICIAL_SINC_ISAT' AND parametro_empresa = 'FILIAL${x}' LIMIT 1
             ) as data_inicial_sinc_isat,
             (
-              SELECT case when substr(parametro_valor, 1, 1) = '5' then true else false end
-              FROM sagi_parametros
-              WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = 'FILIAL${x}'
+              SELECT EXISTS (
+                SELECT 1
+                FROM sagi_parametros
+                WHERE parametro_parametro = 'INFORMA_CACAMBAS'
+                  AND substr(parametro_valor, 1, 1) = '5'
+              )
             ) as movimenta_cacamba,
-            (select 'FILIAL${x}')::text as filial
+            (select 'FILIAL${x}')::text as filial,
+            (select nomegeral from dados) as idempresa
         )
       `;
     }
@@ -82,12 +90,12 @@ class ParametrosModel {
         (
           SELECT parametro_valor
           FROM sagi_parametros
-          WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = '${filial}'
+          WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = '${filial}' LIMIT 1
         ) as usa,
         (
           SELECT parametro_valor
           FROM sagi_parametros
-          WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = '${filial}'
+          WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = '${filial}' LIMIT 1
         ) as token
     `);
 
@@ -120,12 +128,12 @@ class ParametrosModel {
             (
               SELECT parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = '${filial}'
+              WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = '${filial}' LIMIT 1
             ) as usa,
             (
               SELECT parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = '${filial}'
+              WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = '${filial}' LIMIT 1
             ) as token
         `);
 

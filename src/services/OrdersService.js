@@ -34,7 +34,15 @@ class OrdersService {
         })
       );
 
-      await this.ordens.updateForDelete2();
+      await Promise.all(
+        tokens.map((token) => {
+          return Promise.all([
+            this.getOrdersWithRouting(token),
+          ]);
+        })
+      );
+
+      //await this.ordens.updateForDelete2();
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço ordens: ${err.message}`
@@ -57,11 +65,11 @@ class OrdersService {
     });
   }
 
-  async manageOrders({ token, filial, data_inicial_sinc_isat }) {
+  async manageOrders({ token, filial, data_inicial_sinc_isat, idempresa }) {
     try {
-      await this.ordens.updateForDelete({
-        filial,
-      });
+      //await this.ordens.updateForDelete({
+      //  filial,
+      //});
 
       const del_orders_in_isat = [];
       const upd_orders_in_isat = [];
@@ -107,7 +115,11 @@ class OrdersService {
         };
 
         const response = await api
-          .post(`/v2/${token}/ordem_rastreio/delete`, data)
+          .post('/v3/ordem_rastreio_v3/delete', data, {
+            headers: {
+              'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+            }
+          })
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat delete Ordens(DELETE): ${
@@ -157,7 +169,7 @@ class OrdersService {
               placa: reg.placa,
               datasai: reg.datasai,
               codigo: parseInt(reg.codigo, 10),
-              sequencia: parseInt(reg.sequencia, 10),
+              sequencia: parseInt(reg.sequencia, 10)||1,
               horasai: reg.horasai,
               status: reg.status,
               num_col: parseInt(reg.num_col, 10),
@@ -173,7 +185,11 @@ class OrdersService {
         };
 
         const response = await api
-          .post(`/v2/${token}/ordem_rastreio`, data)
+          .post('/v3/ordem_rastreio_v3', data, {
+            headers: {
+              'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+            }
+          })
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat insert/update Ordens(UPDATE): ${
@@ -212,6 +228,7 @@ class OrdersService {
                   registro: retorno.registro,
                   token,
                   filial,
+                  idempresa,
                 });
               } else {
                 this.writeLog(
@@ -259,9 +276,11 @@ class OrdersService {
       sr_recno,
       tipo_retorno,
       tipo_ordem,
+      tipo_cacamba,
     },
     token,
     filial,
+    idempresa,
   }) {
     try {
       let referencia = [];
@@ -363,12 +382,17 @@ class OrdersService {
                   sr_recno,
                   tipo_retorno,
                   tipo_ordem,
+                  tipo_cacamba,
                 },
               ],
             };
 
             const response = await api
-              .post(`/v2/${token}/ordem_rastreio`, data)
+              .post(`/v3/ordem_rastreio_v3`, data, {
+                headers: {
+                  'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+                }
+              })
               .catch((err) =>
                 this.writeLog(
                   `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat insert/update Ordens(UPDATE): ${
@@ -432,6 +456,7 @@ class OrdersService {
     filial,
     movimenta_cacamba,
     data_inicial_sinc_isat,
+    idempresa,
   }) {
     try {
       const ordens = await this.ordens.getOrdensForUpdateStatus({
@@ -445,7 +470,11 @@ class OrdersService {
         const data = regs.map((r) => r.ordem);
 
         const response = await api
-          .post(`/v2/${token}/ordem_rastreio/status`, data)
+          .post(`/v3/ordem_rastreio_v3/status`, data, {
+            headers: {
+              'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+            }
+          })
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Status das Ordens: ${
@@ -490,7 +519,17 @@ class OrdersService {
                     ordem,
                     check: checks[1],
                   });
+                } else {
+                  await this.ordens.clearChecks({
+                    ordem,
+                    type: 'check-out',
+                  });
                 }
+              } else {
+                await this.ordens.clearChecks({
+                  ordem,
+                  type: 'all',
+                });
               }
 
               if (imprevistos.length > 0) {
@@ -503,6 +542,10 @@ class OrdersService {
                       })
                   )
                 );
+              } else {
+                await this.ordens.clearImprevistos({
+                  ordem,
+                });
               }
 
               if (movimenta_cacamba) {
@@ -511,11 +554,21 @@ class OrdersService {
                     ordem,
                     cacamba: cacambas[0],
                   });
+                } else {
+                  await this.ordens.clearCacambas({
+                    ordem,
+                    type: 'IDA',
+                  });
                 }
                 if (cacambas && cacambas[1].numeros.length > 0) {
                   await this.ordens.treatCacamba({
                     ordem,
                     cacamba: cacambas[1],
+                  });
+                } else {
+                  await this.ordens.clearCacambas({
+                    ordem,
+                    type: 'VOLTA',
                   });
                 }
               }
@@ -525,17 +578,32 @@ class OrdersService {
                   ordem,
                   km: kms[0],
                 });
+              } else {
+                await this.ordens.treatKm({
+                  ordem,
+                  km: { tipo: 'IDA', valor: 0 },
+                });
               }
               if (kms[1].valor) {
                 await this.ordens.treatKm({
                   ordem,
                   km: kms[1],
                 });
+              } else {
+                await this.ordens.treatKm({
+                  ordem,
+                  km: { tipo: 'VOLTA', valor: 0 },
+                });
               }
               if (kms.length === 3 && kms[2].valor) {
                 await this.ordens.treatKm({
                   ordem,
                   km: kms[2],
+                });
+              } else {
+                await this.ordens.treatKm({
+                  ordem,
+                  km: { tipo: 'ENCERRA', valor: 0 },
                 });
               }
 
@@ -564,6 +632,85 @@ class OrdersService {
     } catch (err) {
       this.writeLog(
         `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo dos Status das Ordens: ${
+          err.message
+        }`
+      );
+    } finally {
+      await this.dados.setDados({
+        datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
+      });
+    }
+  }
+
+  async getOrdersWithRouting({
+    token,
+    filial,
+    idempresa,
+  }) {
+    try {
+      const response = await api
+        .get(`/v3/ordem_rastreio_v3/orders-with-routing`, {
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+          }
+        })
+        .catch((err) =>
+          this.writeLog(
+            `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Ordens roteirizadas: ${
+              err.response
+                ? `${err.response.status} - ${JSON.stringify(
+                    err.response.data
+                  )}`
+                : err.message
+            }`
+          )
+        );
+
+      if (response && response.status === 200) {
+        const retornos = response.data;
+
+        while (retornos.length > 0) {
+          const {
+            id,
+            ordem,
+            placa,
+            codigo,
+            data,
+          } = (retornos.splice(0, 1))[0];
+
+          if(await this.ordens.setRoutingOrder({
+            ordem,
+            placa,
+            codigo,
+            data,
+          })) {
+            await api
+              .delete(`/v3/ordem_rastreio_v3/orders-with-routing/delete?id=${id}`, {
+                headers: {
+                  'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+                }
+              })
+              .catch((err) =>
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Ordens roteirizadas(DELETE): ${
+                    err.response
+                      ? `${err.response.status} - ${JSON.stringify(
+                          err.response.data
+                        )}`
+                      : err.message
+                  }`
+                )
+              );
+          }
+        }
+      }
+
+      await this.dados.setDados({
+        datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
+      });
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo das Ordens roteirizadas: ${
           err.message
         }`
       );

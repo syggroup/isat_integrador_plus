@@ -11,12 +11,12 @@ class CacambasModel {
           (
             SELECT parametro_valor
             FROM sagi_parametros
-            WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'MATRIZ'
+            WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'MATRIZ' LIMIT 1
           ) as usa,
           (
             SELECT parametro_valor
             FROM sagi_parametros
-            WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'MATRIZ'
+            WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'MATRIZ' LIMIT 1
           ) as token,
           (select 'MATRIZ')::text as filial
       )
@@ -29,12 +29,12 @@ class CacambasModel {
             (
               SELECT parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'FILIAL${x}'
+              WHERE parametro_parametro = 'USA_ISAT' AND parametro_empresa = 'FILIAL${x}' LIMIT 1
             ) as usa,
             (
               SELECT parametro_valor
               FROM sagi_parametros
-              WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'FILIAL${x}'
+              WHERE parametro_parametro = 'TOKEN_ISAT' AND parametro_empresa = 'FILIAL${x}' LIMIT 1
             ) as token,
             (select 'FILIAL${x}')::text as filial
         )
@@ -62,9 +62,12 @@ class CacambasModel {
         b.descricao as desc_tipo_cacamba,
         coalesce(c.sr_recno, 0) > 0 as atualizado,
         (
-          SELECT case when substr(parametro_valor, 1, 1) = '5' then true else false end
-          FROM sagi_parametros
-          WHERE parametro_parametro = 'INFORMA_CACAMBAS' AND parametro_empresa = a.empresa
+          SELECT EXISTS (
+            SELECT 1
+            FROM sagi_parametros
+            WHERE parametro_parametro = 'INFORMA_CACAMBAS'
+              AND substr(parametro_valor, 1, 1) = '5'
+          )
         ) as movimenta_cacamba,
         case when trim(a.situacao) != 'INATIVA' then 'true' else 'false' end as status
       FROM containe a
@@ -162,7 +165,7 @@ class CacambasModel {
   async updateWithChr13OrChr10() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result_u_1 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, chr(10), '') WHERE POSITION(chr(10) IN numero) > 0`);
-    const result_u_2 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, chr(10), '') WHERE POSITION(chr(10) IN numero) > 0`);
+    const result_u_2 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, chr(13), '') WHERE POSITION(chr(13) IN numero) > 0`);
     const result_u_3 = await this.db.query(`UPDATE containe SET numero=REPLACE(numero, '"', '') WHERE POSITION('"' IN numero) > 0`);
     return result_u_1[1].rowCount + result_u_2[1].rowCount + result_u_3[1].rowCount;
   }

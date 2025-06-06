@@ -48,6 +48,22 @@ class Ordens {
   retornoIsat(data) {
     return this.ordens_model.retornoIsat(data);
   }
+
+  setRoutingOrder(data) {
+    return this.ordens_model.setRoutingOrder(data);
+  }
+
+  clearChecks(data) {
+    return this.ordens_model.clearChecks(data);
+  }
+
+  clearImprevistos(data) {
+    return this.ordens_model.clearImprevistos(data);
+  }
+
+  clearCacambas(data) {
+    return this.ordens_model.clearCacambas(data);
+  }
 }
 
 module.exports = Ordens;

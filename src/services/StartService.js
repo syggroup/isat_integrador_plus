@@ -13,7 +13,7 @@ const WeighingsService = require("./WeighingsService");
 const api = require("../services/api");
 
 class StartService {
-  constructor(window, db, app_version = null, isRunning = {}) {
+  constructor(window, db, app_version = null, isRunning = {}, filiais_isat = {}, loadSplashScreenAndQuitApp = {}) {
     this.dados = new Dados(db);
     this.parametros = new Parametros(db);
 
@@ -29,6 +29,8 @@ class StartService {
     this.window = window;
     this.app_version = app_version;
     this.isRunning = isRunning;
+    this.filiais_isat = filiais_isat;
+    this.loadSplashScreenAndQuitApp = loadSplashScreenAndQuitApp;
   }
 
   async start(sygecom_cloud) {
@@ -63,17 +65,22 @@ class StartService {
 
           this.sendMachineDataToIsat(sygecom_cloud, versao);
 
-          await this.vehiclesService.execute({ tokens: this.unique_tokens });
-
+          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
+          await this.vehiclesService.execute({
+            tokens: this.unique_tokens,
+            filiais_isat:
+            this.filiais_isat.get(),
+          });
+          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
           await this.containersService.execute({
             tokens: this.unique_tokens,
             nfiliais: filiais,
           });
-
+          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
           await this.referencesService.execute({ tokens: this.unique_tokens });
-
+          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
           await this.ordersService.execute({ tokens: this.tokens });
-
+          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
           await this.weighingsService.execute();
 
           if (
@@ -134,9 +141,10 @@ class StartService {
           const registros = response.data;
 
           const concat_retornos = [];
+          const _filiais_isat = {};
 
           await Promise.all(
-            registros.map(async ({ filial, token }) => {
+            registros.map(async ({ filial, token, motoristas_x_veiculos_sagi }) => {
               if (filial) {
                 await this.parametros.setToken({
                   filial,
@@ -145,12 +153,19 @@ class StartService {
                 });
 
                 concat_retornos.push(`${filial}:${token}`);
+                _filiais_isat[filial] = { motoristas_x_veiculos_sagi, token };
               } else {
                 concat_retornos.push(
                   `Token sem filial definida no iSat:${token}`
                 );
               }
             })
+          );
+
+          this.filiais_isat.set(_filiais_isat);
+
+          this.writeLog(
+            `(${new Date().toLocaleString()}) - Filiais isat: (${JSON.stringify(this.filiais_isat.get())})`
           );
         }
       } else {

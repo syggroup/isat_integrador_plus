@@ -6,7 +6,7 @@ class DadosModel {
   async get() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(
-      "SELECT gps_aberto, filiais, nomegeral, coalesce(trim(versao), '0.0.0.0') as versao FROM dados"
+      "SELECT trim(gps_aberto) as gps_aberto, filiais, nomegeral, coalesce(trim(versao), '0.0.0.0') as versao FROM dados"
     );
     return result[1].rows;
   }

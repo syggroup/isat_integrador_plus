@@ -16,10 +16,10 @@ class VehiclesService {
     this.placas_isat = [];
   }
 
-  async execute({ tokens }) {
+  async execute({ tokens, filiais_isat }) {
     try {
       await Promise.all(
-        tokens.map(({ token, filial }) => this.manageVehicles(token, filial))
+        tokens.map(({ token, filial }) => this.manageVehicles(token, filial, filiais_isat))
       );
 
       if (this.placas_isat.length > 0) {
@@ -45,7 +45,7 @@ class VehiclesService {
     });
   }
 
-  async manageVehicles(token, filial) {
+  async manageVehicles(token, filial, filiais_isat) {
     try {
       const response = await api
         .get(`/v2/${token}/veiculo`)
@@ -68,7 +68,12 @@ class VehiclesService {
           registros.map(async (registro) => {
             this.placas_isat.push(registro.placa);
 
-            const count = await this.veiculos.update(registro);
+            let altera_motorista = false;
+            if (filiais_isat[filial] !== undefined && parseInt(registro.codmot, 10) > 0) {
+              altera_motorista = filiais_isat[filial].motoristas_x_veiculos_sagi;
+            }
+
+            const count = await this.veiculos.update(registro, altera_motorista);
 
             if (count === 0) {
               this.writeLog(

@@ -5,8 +5,8 @@ class Veiculos {
     this.veiculos_model = new VeiculosModel(db);
   }
 
-  update(data) {
-    return this.veiculos_model.update(data);
+  update(registro, altera_motorista) {
+    return this.veiculos_model.update(registro, altera_motorista);
   }
 
   notFindInIsatAndUpdate(data) {
