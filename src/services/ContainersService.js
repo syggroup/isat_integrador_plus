@@ -292,6 +292,15 @@ class ContainersService {
 
       cacambas_sagi.forEach((cs) => {
         if (!cs.atualizado) {
+          let array_tags = cs.tags;
+          if (!Array.isArray(array_tags)) {
+            try {
+              array_tags = JSON.parse(array_tags);
+            } catch (e) {
+              array_tags = [];
+            }
+          }
+
           upd_cacambas_in_isat.push({
             tipo_referencia: cs.tipo_referencia,
             codigo:
@@ -301,6 +310,7 @@ class ContainersService {
             tipo_cacamba: parseInt(cs.tipo_cacamba, 10),
             desc_tipo_cacamba: cs.desc_tipo_cacamba,
             status: cs.status,
+            tags: array_tags,
           });
         }
       });

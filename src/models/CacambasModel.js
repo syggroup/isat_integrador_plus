@@ -52,7 +52,22 @@ class CacambasModel {
 
   async get({ token, nfiliais }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
+
     const branches = await this.getBranchesWithTheSameToken(token, nfiliais);
+
+    const checkTable = await this.db.query(
+      `SELECT to_regclass('public.containe_tag') IS NOT NULL AS exists`
+    );
+    const tableExists = checkTable[1].rows[0].exists;
+
+    const tagsField = tableExists
+      ? `coalesce((
+          SELECT jsonb_agg(trim(ct.tag) ORDER BY ct.tag)
+          FROM containe_tag ct
+          WHERE ct.numero = a.numero
+        ),'[]') AS tags`
+      : `'[]' AS tags`;
+
     const result = await this.db.query(`
       SELECT CASE WHEN forcli = 'F' THEN 'fornecedor' WHEN forcli = 'C' THEN 'cliente' ELSE '' END as tipo_referencia,
         a.codfor::text as codigo,
@@ -69,7 +84,8 @@ class CacambasModel {
               AND substr(parametro_valor, 1, 1) = '5'
           )
         ) as movimenta_cacamba,
-        case when trim(a.situacao) != 'INATIVA' then 'true' else 'false' end as status
+        case when trim(a.situacao) != 'INATIVA' then 'true' else 'false' end as status,
+        ${tagsField}
       FROM containe a
       LEFT JOIN sagi_isat_sinc c ON c.tipo='CONTAINE'
         AND c.codigo=a.sr_recno
