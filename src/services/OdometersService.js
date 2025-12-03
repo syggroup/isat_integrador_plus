@@ -20,7 +20,7 @@ class OdometersService {
       );
     } catch (err) {
       this.writeLog(
-        `(${new Date().toLocaleString()}) - Erro serviço veículos: ${
+        `(${new Date().toLocaleString()}) - Erro serviço hodometro veículos: ${
           err.message
         }`
       );

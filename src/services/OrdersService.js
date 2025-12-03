@@ -3,9 +3,6 @@ const moment = require("moment");
 const Dados = require("../controllers/Dados");
 const Ordens = require("../controllers/Ordens");
 const SagiIsatSinc = require("../controllers/SagiIsatSinc");
-const Fornecedores = require("../controllers/Fornecedores");
-const ForEnde = require("../controllers/ForEnde");
-const Clientes = require("../controllers/Clientes");
 
 const api = require("../services/api");
 
@@ -16,23 +13,25 @@ class OrdersService {
     this.ordens = new Ordens(db);
 
     this.sagiIsatSinc = new SagiIsatSinc(db);
-    this.fornecedores = new Fornecedores(db);
-    this.forEnde = new ForEnde(db);
-    this.clientes = new Clientes(db);
 
     this.window = window;
   }
 
-  async execute({ tokens }) {
+  async execute({ tokens, filiais_isat, token }) {
     try {
-      await Promise.all(
-        tokens.map((token) => {
-          return Promise.all([
-            this.manageOrders(token),
-            this.updateStatusOrders(token),
-          ]);
-        })
-      );
+      if (token) {
+        await this.manageOrders(token, true, Object.values(filiais_isat)[0].filiais);
+        await this.updateStatusOrders(token, filiais_isat, true);
+      } else {
+        await Promise.all(
+          tokens.map((token) => {
+            return Promise.all([
+              this.manageOrders(token, false, {}),
+              this.updateStatusOrders(token, filiais_isat, false),
+            ]);
+          })
+        );
+      }
 
       await Promise.all(
         tokens.map((token) => {
@@ -65,7 +64,12 @@ class OrdersService {
     });
   }
 
-  async manageOrders({ token, filial, data_inicial_sinc_isat, idempresa }) {
+  getIdByFilial(filial, filiais_isat) {
+    const item = filiais_isat.find(obj => obj.descricao_default === filial);
+    return item ? item.id : null;
+  }
+
+  async manageOrders({ token, filial, data_inicial_sinc_isat, idempresa }, ordens_com_servico, filiais_isat) {
     try {
       //await this.ordens.updateForDelete({
       //  filial,
@@ -79,6 +83,7 @@ class OrdersService {
         filial,
         data_inicial_sinc_isat,
         limit: token === 'a9391a16800f5dabe0e0160b9bed9daa' ? 50 : 1000,
+        ordens_com_servico,
       });
 
       ordens.forEach((ordem) => {
@@ -173,16 +178,100 @@ class OrdersService {
               horasai: reg.horasai,
               status: reg.status,
               num_col: parseInt(reg.num_col, 10),
+              codigo_destino_final: parseInt(reg.codigo_destino_final, 10),
               cnh: reg.cnh.replace(/\D/g, ""),
               filial: reg.filial,
               observacoes: reg.obs,
               sr_recno: reg.sr_recno,
-              tipo_retorno: reg.tipo_retorno,
+              tipo_retorno: reg.tipo_retorno.trim() != 'WEB' ? reg.tipo_retorno : 'TROCA',
               tipo_ordem: reg.tipo_ordem,
               tipo_cacamba: reg.tipo_cacamba,
+              sagi_col_servico: ordens_com_servico && reg.coleta_servico ? reg.sagi_col_servico.map((sagi_col_servico) => {
+                return {
+                  servico_id: parseInt(sagi_col_servico.servico_id, 10),
+                  servico_qtd: parseFloat(sagi_col_servico.servico_qtd),
+                  servico_valor: parseFloat(sagi_col_servico.servico_valor),
+                  mtr_id: parseInt(sagi_col_servico.mtr_id, 10),
+                  id_sagi_cag_pro: parseInt(sagi_col_servico.id_sagi_cag_pro, 10),
+                  cadri_prod_id: parseInt(sagi_col_servico.cadri_prod_id, 10),
+                  serv_gestaoresiduo: sagi_col_servico.serv_gestaoresiduo,
+                  serv_armazenagem: sagi_col_servico.serv_armazenagem,
+                  serv_consultoria: sagi_col_servico.serv_consultoria,
+                  serv_locacao: sagi_col_servico.serv_locacao,
+                  id_sagi_item_contrato_serv3: parseInt(sagi_col_servico.id_sagi_item_contrato_serv3, 10),
+                  sr_recno_cag_pr2: parseInt(sagi_col_servico.sr_recno_cag_pr2, 10),
+                  ativos: sagi_col_servico.serv_locacao ? sagi_col_servico.ativos.map((ativo) => {
+                    return {
+                      ativo_id: parseInt(ativo.ativo_id, 10),
+                    };
+                  }) : [],
+                  residuos: sagi_col_servico.serv_gestaoresiduo ? sagi_col_servico.residuos.map((residuo) => {
+                    const id = this.getIdByFilial(residuo.filial, filiais_isat);
+                    if (id !== null) {
+                      return {
+                        id_sagi_cag_pro: parseInt(residuo.id_sagi_cag_pro, 10),
+                        id_sagi_cag_pro_des: parseInt(residuo.id_sagi_cag_pro_des, 10),
+                        peso: parseFloat(residuo.peso),
+                        peso_des: parseFloat(residuo.peso_des),
+                        modnot: residuo.modnot,
+                        num_nf: parseInt(residuo.num_nf, 10),
+                        serie_nf: residuo.serie_nf,
+                        num_brm: residuo.num_brm,
+                        id_filial: id,
+                        preco: parseFloat(residuo.preco),
+                        est_fisico: residuo.est_fisico,
+                        classe: residuo.classe,
+                        acondiciona: residuo.acondiciona,
+                        num_onu: parseInt(residuo.num_onu, 10),
+                        num_risco: parseInt(residuo.num_risco, 10),
+                        gru_emb: residuo.gru_emb,
+                        ordem_endereco_descricao: residuo.ordem_endereco_descricao,
+                      };
+                    }
+                    return null;
+                  }).filter(Boolean) : [],
+                };
+              }) : [],
             };
+          }).filter((reg) => {
+            // se ordens_com_servico = false, passa
+            if (!ordens_com_servico) return true;
+
+            // se ordens_com_servico = true e coleta_servico = false passa
+            if (!reg.coleta_servico) return true;
+
+            // valida se sagi_col_servico existe e tem itens
+            if (!reg.sagi_col_servico || reg.sagi_col_servico.length === 0) return false;
+
+            // valida cada sagi_col_servico
+            return reg.sagi_col_servico.every(servico => {
+              // se serv_locacao = true, ativos deve ter itens
+              if (servico.serv_locacao && (!servico.ativos || servico.ativos.length === 0)) {
+                return false;
+              }
+
+              // se serv_gestaoresiduo = true, residuos deve ter itens
+              if (servico.serv_gestaoresiduo && (!servico.residuos || servico.residuos.length === 0)) {
+                return false;
+              }
+
+              return true;
+            });
           }),
         };
+
+        // regs não encontrados em data.registros excluir para limpar isat_ordem_temp
+        await Promise.all(
+          regs.filter(reg => {
+            return !data.registros.some(dataReg => dataReg.sr_recno === reg.sr_recno);
+          }).map(async (reg) => {
+            await this.ordens.delete({
+              sr_recno: reg.sr_recno
+            });
+          })
+        );
+
+        if(data.registros.length === 0) continue;
 
         const response = await api
           .post('/v3/ordem_rastreio_v3', data, {
@@ -217,18 +306,13 @@ class OrdersService {
               if (
                 !retorno.erro ||
                 (retorno.erro &&
-                  retorno.erro.indexOf("laca") !== -1 &&
-                  retorno.erro.indexOf("encontrada") !== -1)
+                  ((retorno.erro.indexOf("laca") !== -1 &&
+                    retorno.erro.indexOf("encontrada") !== -1) ||
+                   (retorno.erro.indexOf("ncia") !== -1))
+                )
               ) {
                 await this.ordens.delete({
                   sr_recno: retorno.registro.sr_recno,
-                });
-              } else if (retorno.erro && retorno.erro.indexOf("ncia") !== -1) {
-                await this.checkRefAndTrySendOrderAgain({
-                  registro: retorno.registro,
-                  token,
-                  filial,
-                  idempresa,
                 });
               } else {
                 this.writeLog(
@@ -259,196 +343,24 @@ class OrdersService {
     }
   }
 
-  async checkRefAndTrySendOrderAgain({
-    registro: {
-      ordem,
-      tipo,
-      placa,
-      datasai,
-      codigo,
-      sequencia,
-      horasai,
-      status,
-      num_col,
-      cnh,
-      filial: filial_ordem,
-      observacoes,
-      sr_recno,
-      tipo_retorno,
-      tipo_ordem,
-      tipo_cacamba,
-    },
-    token,
-    filial,
-    idempresa,
-  }) {
-    try {
-      let referencia = [];
-
-      if (tipo === "CLIENTE") {
-        referencia = await this.clientes.getCliente({
-          codigo: parseInt(codigo, 10),
-        });
-      } else {
-        if (parseInt(num_col, 10)) {
-          referencia = await this.forEnde.getForEnde({
-            codigo: parseInt(codigo, 10),
-            num_col: parseInt(num_col, 10),
-          });
-        } else {
-          referencia = await this.fornecedores.getFornecedor({
-            codigo: parseInt(codigo, 10),
-          });
-        }
-      }
-
-      if (referencia.length > 0) {
-        const data = {
-          registros: [
-            {
-              tipo: referencia[0].tipo,
-              nome: referencia[0].nome,
-              apelido: referencia[0].apelido,
-              id_cidade: parseInt(referencia[0].id_cidade, 10),
-              latitude: parseFloat(referencia[0].latitude),
-              longitude: parseFloat(referencia[0].longitude),
-              codigo: parseInt(referencia[0].codigo, 10),
-              status: referencia[0].status,
-              cpf_cnpj: referencia[0].cpf_cnpj,
-              tp: referencia[0].tp,
-              ...(referencia[0].endereco && {
-                endereco: referencia[0].endereco,
-              }),
-              ...(referencia[0].bairro && { bairro: referencia[0].bairro }),
-              ...(referencia[0].numero && { numero: referencia[0].numero }),
-              ...(referencia[0].complemento && {
-                complemento: referencia[0].complemento,
-              }),
-              ...(referencia[0].cep && {
-                cep: parseInt(referencia[0].cep, 10),
-              }),
-              ...(referencia[0].data_nasc && {
-                data_nasc: referencia[0].data_nasc,
-              }),
-              ...(referencia[0].email && { email: referencia[0].email }),
-              ...(referencia[0].num_col && {
-                num_col: parseInt(referencia[0].num_col, 10),
-              }),
-              ...(referencia[0].tel1 && { tel1: referencia[0].tel1 }),
-              ...(referencia[0].tel2 && { tel2: referencia[0].tel2 }),
-            },
-          ],
-        };
-
-        const response = await api
-          .post(`/v2/${token}/referencia`, data)
-          .catch((err) =>
-            this.writeLog(
-              `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat Referência da Ordem: ${
-                err.response
-                  ? `${err.response.status} - ${JSON.stringify(
-                      err.response.data
-                    )}`
-                  : err.message
-              }`
-            )
-          );
-
-        if (response && response.status === 200) {
-          const retorno_ref = response.data[0];
-
-          if (!retorno_ref.erro) {
-            await this.sagiIsatSinc.insert({
-              codigo: parseInt(num_col, 10) === 0 ? parseInt(referencia[0].codigo, 10) : referencia[0].sr_recno,
-              type: parseInt(num_col, 10) === 0 ? referencia[0].tipo : 'FORNECEDOR-ENDE',
-              token,
-            });
-
-            const data = {
-              registros: [
-                {
-                  ordem,
-                  tipo,
-                  placa,
-                  datasai,
-                  codigo,
-                  sequencia,
-                  horasai,
-                  status,
-                  num_col,
-                  cnh,
-                  filial: filial_ordem,
-                  observacoes,
-                  sr_recno,
-                  tipo_retorno,
-                  tipo_ordem,
-                  tipo_cacamba,
-                },
-              ],
-            };
-
-            const response = await api
-              .post(`/v3/ordem_rastreio_v3`, data, {
-                headers: {
-                  'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
-                }
-              })
-              .catch((err) =>
-                this.writeLog(
-                  `(${new Date().toLocaleString()} / ${filial}) - Erro requisição Api Isat insert/update Ordens(UPDATE): ${
-                    err.response
-                      ? `${err.response.status} - ${JSON.stringify(
-                          err.response.data
-                        )}`
-                      : err.message
-                  }`
-                )
-              );
-
-            if (response && response.status === 200) {
-              const retorno_ord = response.data[0];
-
-              if (
-                !retorno_ord.erro ||
-                retorno_ord.erro.indexOf("ncia") === -1
-              ) {
-                await this.ordens.delete({
-                  sr_recno: retorno_ord.registro.sr_recno,
-                });
-              } else {
-                this.writeLog(
-                  `(${new Date().toLocaleString()} / ${filial}) - Ordem:${
-                    retorno_ord.registro.ordem
-                  }:INSERT/UPDATE:ERRO:${retorno_ord.erro}`
-                );
-              }
-            }
-          } else {
-            await this.ordens.delete({
-              sr_recno,
-            });
-          }
-        } else {
-          await this.ordens.delete({
-            sr_recno,
-          });
-        }
-      } else {
-        await this.ordens.delete({
-          sr_recno,
-        });
-      }
-    } catch (err) {
-      await this.ordens.delete({
-        sr_recno,
-      });
-
-      this.writeLog(
-        `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado no sincronismo das Ordens: ${
-          err.message
-        }`
-      );
+  devePegarEncerrarAtividade(filiais_isat, filial) {
+    if (filiais_isat.hasOwnProperty(filial)) {
+      return filiais_isat[filial].data_hora_encerrar_atividade_no_sagi;
+    } else if (filiais_isat.hasOwnProperty("TODAS")) {
+      return filiais_isat["TODAS"].data_hora_encerrar_atividade_no_sagi;
     }
+
+    return false;
+  }
+
+  checkFinalizaColetaEmbarque(filiais_isat, filial, parametro) {
+    if (filiais_isat.hasOwnProperty(filial) && filiais_isat[filial].hasOwnProperty(parametro)) {
+      return filiais_isat[filial][parametro];
+    } else if (filiais_isat.hasOwnProperty("TODAS") && filiais_isat["TODAS"].hasOwnProperty(parametro)) {
+      return filiais_isat["TODAS"][parametro];
+    }
+
+    return false;
   }
 
   async updateStatusOrders({
@@ -457,15 +369,16 @@ class OrdersService {
     movimenta_cacamba,
     data_inicial_sinc_isat,
     idempresa,
-  }) {
+  }, filiais_isat, ordens_com_servico) {
     try {
       const ordens = await this.ordens.getOrdensForUpdateStatus({
         filial,
         data_inicial_sinc_isat,
+        ordens_com_servico,
       });
 
       while (ordens.length > 0) {
-        const regs = ordens.splice(0, 10);
+        const regs = ordens.splice(0, 50);
 
         const data = regs.map((r) => r.ordem);
 
@@ -500,6 +413,9 @@ class OrdersService {
                 cacambas,
                 kms,
                 first_iter,
+                encerra,
+                tipo_ordem,
+                tipo_retorno,
               } = registro;
 
               await this.ordens.retornoIsat({
@@ -512,12 +428,19 @@ class OrdersService {
                 await this.ordens.treatCheck({
                   ordem,
                   check: checks[0],
+                  tot_cacambas: null,
                 });
 
                 if (checks[1] !== undefined) {
                   await this.ordens.treatCheck({
                     ordem,
                     check: checks[1],
+                    tot_cacambas:
+                      cacambas
+                        && cacambas.length > 1
+                        && cacambas[1].numeros
+                          ? cacambas[1].numeros.length
+                          : null,
                   });
                 } else {
                   await this.ordens.clearChecks({
@@ -613,6 +536,39 @@ class OrdersService {
                   date: first_iter.date,
                   time: first_iter.time,
                 });
+              }
+
+              try {
+                if (this.devePegarEncerrarAtividade(filiais_isat, filial) && encerra.date && encerra.time) {
+                  await this.ordens.setCloseDateTime({
+                    ordem,
+                    date: encerra.date,
+                    time: encerra.time,
+                  });
+                }
+              } catch (err_encerra_atividade) {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado ao tentar salvar encerramento de atividade na Ordem (${ordem}): ${
+                    err_encerra_atividade.message
+                  }`
+                );
+              }
+
+              try {
+                if (
+                    ((tipo_ordem == 'COLETA' && tipo_retorno == 'ENVIO') || (tipo_ordem == 'EMBARQUE'))
+                    && (this.checkFinalizaColetaEmbarque(filiais_isat, filial, tipo_ordem == 'COLETA' ? 'finaliza_coleta_envio_sagi' : 'finaliza_embarque_todos_sagi') && encerra.date && encerra.time)
+                  ) {
+                  await this.ordens.setFinishOrder({
+                    ordem,
+                  });
+                }
+              } catch (err_finalizar_ordem) {
+                this.writeLog(
+                  `(${new Date().toLocaleString()} / ${filial}) - Erro inesperado ao tentar finalizar Ordem (${ordem}) por encerramento de atividade no driversat: ${
+                    err_finalizar_ordem.message
+                  }`
+                );
               }
 
               // if (situacao.indexOf("ENCONTRADA") !== -1) {

@@ -1,0 +1,143 @@
+const moment = require("moment");
+
+const Dados = require("../controllers/Dados");
+const CategoriaDeFornecedores = require("../controllers/CategoriaDeFornecedores");
+const SagiIsatSinc = require("../controllers/SagiIsatSinc");
+
+const api = require("../services/api");
+
+class CategoriaDeFornecedoresService {
+  constructor(window, db) {
+    this.dados = new Dados(db);
+
+    this.categoriaDeFornecedores = new CategoriaDeFornecedores(db);
+
+    this.sagiIsatSinc = new SagiIsatSinc(db);
+
+    this.window = window;
+  }
+
+  async execute({ token, filiais_isat }) {
+    try {
+      await this.manageCategoriaDeFornecedores(token, filiais_isat);
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Erro serviço categoria de fornecedores: ${
+          err.message
+        }`
+      );
+    } finally {
+      await this.dados.setDados({
+        datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
+      });
+    }
+  }
+
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  writeLog(log) {
+    this.window.webContents.send("log", {
+      log,
+      type: "categoria_de_fornecedores",
+    });
+  }
+
+  getIdByFilial(filial, filiais_isat) {
+    const item = filiais_isat.find(obj => obj.descricao_default === filial);
+    return item ? item.id : null;
+  }
+
+  async manageCategoriaDeFornecedores({ token, idempresa }, filiais_isat) {
+    try {
+      const categorias = await this.categoriaDeFornecedores.getCategoriaDeFornecedores({ token });
+
+      const categorias_com_filial = categorias
+        .map(categoria => {
+          const id = this.getIdByFilial(categoria.filial, filiais_isat);
+          if (id !== null) {
+            return {
+              ...categoria,
+              id_filial: id
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      while (categorias_com_filial.length > 0) {
+        const regs = categorias_com_filial.splice(0, 10);
+
+        const data = {
+          registros: regs.map((r) => {
+            return {
+              cls: parseInt(r.cls, 10),
+              categoria: r.categoria,
+              obs: r.obs,
+              id_filial: parseInt(r.id_filial, 10),
+              nao_blq_prc_tabdif_fsd: r.nao_blq_prc_tabdif_fsd,
+            };
+          }),
+        };
+
+        const response = await api
+          .post(`/v3/categoria_de_fornecedor_v3/`, data, {
+            headers: {
+              'Authorization': `Basic ${Buffer.from(`${idempresa}:${token}`).toString('base64')}`
+            }
+          })
+          .catch((err) =>
+            this.writeLog(
+              `(${new Date().toLocaleString()}) - Erro requisição Api Isat Categoria de Fornecedores: ${
+                err.response
+                  ? `${err.response.status} - ${JSON.stringify(
+                      err.response.data
+                    )}`
+                  : err.message
+              }`
+            )
+          );
+
+        if (response && response.status === 200) {
+          const retornos = response.data;
+
+          await Promise.all(
+            retornos.map(async (retorno) => {
+              if (!retorno.erro) {
+                await this.sagiIsatSinc.insert({
+                  codigo: retorno.registro.cls,
+                  type: "CATEGOR",
+                  token,
+                });
+              } else {
+                this.writeLog(
+                  `(${new Date().toLocaleString()}) - Categoria de Fornecedor:${
+                    retorno.registro.cls
+                  }:ERRO:${retorno.erro}`
+                );
+              }
+            })
+          );
+        }
+
+        await this.dados.setDados({
+          datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
+        });
+        await this.sleep(500);
+      }
+    } catch (err) {
+      this.writeLog(
+        `(${new Date().toLocaleString()}) - Erro inesperado no sincronismo das categoria de fornecedores: ${
+          err.message
+        }`
+      );
+    } finally {
+      await this.dados.setDados({
+        datetime: moment().format("DD/MM/YYYY|HH:mm:ss"),
+      });
+    }
+  }
+}
+
+module.exports = CategoriaDeFornecedoresService;

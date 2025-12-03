@@ -20,7 +20,7 @@ class ParametrosModel {
           ) as token,
           (
             SELECT case
-              when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+              when parametro_valor ~ '^\\d{2}/\\d{2}/\\d{4}$'
                 then parametro_valor
                 else to_char(current_date - 7, 'DD/MM/YYYY')
               end as parametro_valor
@@ -57,7 +57,7 @@ class ParametrosModel {
             ) as token,
             (
               SELECT case
-                when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+                when parametro_valor ~ '^\\d{2}/\\d{2}/\\d{4}$'
                   then parametro_valor
                   else to_char(current_date - 7, 'DD/MM/YYYY')
                 end as parametro_valor
@@ -161,7 +161,7 @@ class ParametrosModel {
 
     const result = await this.db.query(`
       SELECT case
-        when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+        when parametro_valor ~ '^\\d{2}/\\d{2}/\\d{4}$'
           then parametro_valor
           else to_char(current_date - 7, 'DD/MM/YYYY')
         end as parametro_valor,
@@ -184,7 +184,7 @@ class ParametrosModel {
 
     const result_2 = await this.db.query(`
       SELECT case
-        when parametro_valor ~ '^\d{2}/\d{2}/\d{4}$'
+        when parametro_valor ~ '^\\d{2}/\\d{2}/\\d{4}$'
           then parametro_valor
           else to_char(current_date - 7, 'DD/MM/YYYY')
         end as parametro_valor,

@@ -21,7 +21,7 @@ class MotoristasModel {
         a.codmot as codigo,
         0 as num_col,
         trim(a.status) as status,
-        regexp_replace(ltrim(trim(a.fone), '0'), '\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(a.fone), '0'), '\\D', '', 'g') as tel1,
         '' as tel2,
         trim(a.numcnh) as cnh,
         a.vencnh as cnh_validade,

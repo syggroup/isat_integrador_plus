@@ -22,10 +22,10 @@ class ClientesModel {
         a.codcli as codigo,
         0 as num_col,
         trim(a.status) as status,
-        regexp_replace(ltrim(trim(a.fone), '0'), '\D', '', 'g') as tel1,
-        regexp_replace(ltrim(trim(a.fone2), '0'), '\D', '', 'g') as tel2,
+        regexp_replace(ltrim(trim(a.fone), '0'), '\\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(a.fone2), '0'), '\\D', '', 'g') as tel2,
         trim(a.tipojf) as tp,
-        case when trim(a.tipojf) = 'F' then regexp_replace(trim(a.cpf), '\D', '', 'g') else regexp_replace(trim(a.cgc), '\D', '', 'g') end as cpf_cnpj
+        case when trim(a.tipojf) = 'F' then regexp_replace(trim(a.cpf), '\\D', '', 'g') else regexp_replace(trim(a.cgc), '\\D', '', 'g') end as cpf_cnpj
       FROM cag_cli a
       WHERE a.codcli not in (select b.codigo from sagi_isat_sinc b where b.tipo='CLIENTE' and b.token = '${token}')
       ORDER BY a.codcli
@@ -52,10 +52,10 @@ class ClientesModel {
         a.codcli as codigo,
         0 as num_col,
         trim(a.status) as status,
-        regexp_replace(ltrim(trim(a.fone), '0'), '\D', '', 'g') as tel1,
-        regexp_replace(ltrim(trim(a.fone2), '0'), '\D', '', 'g') as tel2,
+        regexp_replace(ltrim(trim(a.fone), '0'), '\\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(a.fone2), '0'), '\\D', '', 'g') as tel2,
         trim(a.tipojf) as tp,
-        case when trim(a.tipojf) = 'F' then regexp_replace(trim(a.cpf), '\D', '', 'g') else regexp_replace(trim(a.cgc), '\D', '', 'g') end as cpf_cnpj
+        case when trim(a.tipojf) = 'F' then regexp_replace(trim(a.cpf), '\\D', '', 'g') else regexp_replace(trim(a.cgc), '\\D', '', 'g') end as cpf_cnpj
       FROM cag_cli a
       WHERE a.codcli = ${codigo}
     `);

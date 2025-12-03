@@ -10,10 +10,37 @@ const ContainersService = require("./ContainersService");
 const TicketsService = require("./TicketsService");
 const WeighingsService = require("./WeighingsService");
 
+const CategoriaDeFornecedoresService = require("./CategoriaDeFornecedoresService");
+const SetoresService = require("./SetoresService");
+const SagiUnidadesService = require("./SagiUnidadesService");
+const ClassificadoresService = require("./ClassificadoresService");
+const RegiaoService = require("./RegiaoService");
+const FuncionariosService = require("./FuncionariosService");
+const ChecklistService = require("./ChecklistService");
+const ControladoresService = require("./ControladoresService");
+const SagiFormaPagtosService = require("./SagiFormaPagtosService");
+const CentroDeContasService = require("./CentroDeContasService");
+const PrazosService = require("./PrazosService");
+const CentroDeCustosService = require("./CentroDeCustosService");
+const ClasseDeCredoresService = require("./ClasseDeCredoresService");
+const CredoresService = require("./CredoresService");
+const VendedoresService = require("./VendedoresService");
+const CompradoresService = require("./CompradoresService");
+const UsuariosService = require("./UsuariosService");
+const CategoriaDeProdutosService = require("./CategoriaDeProdutosService");
+const NcmService = require("./NcmService");
+const TipoDeProdutosService = require("./TipoDeProdutosService");
+const SagiListaOnuService = require("./SagiListaOnuService");
+const ProdutosService = require("./ProdutosService");
+const Produtos2Service = require("./Produtos2Service");
+const TipoCaminhaoService = require("./TipoCaminhaoService");
+const SagiCadAtivoService = require("./SagiCadAtivoService");
+const ContratosServ3Service = require("./ContratosServ3Service");
+
 const api = require("../services/api");
 
 class StartService {
-  constructor(window, db, app_version = null, isRunning = {}, filiais_isat = {}, loadSplashScreenAndQuitApp = {}) {
+  constructor(window, db, app_version = null, isRunning = {}, filiais_isat = {}, quitApp = {}, alreadyExecutedToday = {}) {
     this.dados = new Dados(db);
     this.parametros = new Parametros(db);
 
@@ -24,19 +51,47 @@ class StartService {
     this.ticketsService = new TicketsService(window, db);
     this.weighingsService = new WeighingsService(window, db);
 
+    this.categoriaDeFornecedoresService = new CategoriaDeFornecedoresService(window, db);
+    this.setoresService = new SetoresService(window, db);
+    this.sagiUnidadesService = new SagiUnidadesService(window, db);
+    this.classificadoresService = new ClassificadoresService(window, db);
+    this.regiaoService = new RegiaoService(window, db);
+    this.funcionariosService = new FuncionariosService(window, db);
+    this.controladoresService = new ControladoresService(window, db);
+    this.checklistService = new ChecklistService(window, db);
+    this.sagiFormaPagtosService = new SagiFormaPagtosService(window, db);
+    this.centroDeContasService = new CentroDeContasService(window, db);
+    this.prazosService = new PrazosService(window, db);
+    this.centroDeCustosService = new CentroDeCustosService(window, db);
+    this.classeDeCredoresService = new ClasseDeCredoresService(window, db);
+    this.credoresService = new CredoresService(window, db);
+    this.vendedoresService = new VendedoresService(window, db);
+    this.compradoresService = new CompradoresService(window, db);
+    this.usuariosService = new UsuariosService(window, db);
+    this.categoriaDeProdutosService = new CategoriaDeProdutosService(window, db);
+    this.ncmService = new NcmService(window, db);
+    this.tipoDeProdutosService = new TipoDeProdutosService(window, db);
+    this.sagiListaOnuService = new SagiListaOnuService(window, db);
+    this.produtosService = new ProdutosService(window, db);
+    this.produtos2Service = new Produtos2Service(window, db);
+    this.tipoCaminhaoService = new TipoCaminhaoService(window, db);
+    this.sagiCadAtivoService = new SagiCadAtivoService(window, db);
+    this.contratosServ3Service = new ContratosServ3Service(window, db);
+
     this.tokens = [];
     this.unique_tokens = [];
     this.window = window;
     this.app_version = app_version;
     this.isRunning = isRunning;
     this.filiais_isat = filiais_isat;
-    this.loadSplashScreenAndQuitApp = loadSplashScreenAndQuitApp;
+    this.quitApp = quitApp;
+    this.alreadyExecutedToday = alreadyExecutedToday;
   }
 
   async start(sygecom_cloud) {
     try {
-      const { gps_aberto, filiais, versao } = (await this.dados.getDados())[0];
-      const split_versao = versao.split(".");
+      const { gps_aberto, filiais, nomegeral, versao, hab_servicos_3, existe_pl_syg_crud_ordem_serv3 } = (await this.dados.getDados())[0];
+      // const split_versao = versao.split(".");
 
       const date_time = gps_aberto ? gps_aberto.replace("|", " ") : moment();
 
@@ -65,31 +120,155 @@ class StartService {
 
           this.sendMachineDataToIsat(sygecom_cloud, versao);
 
-          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
+          if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
           await this.vehiclesService.execute({
             tokens: this.unique_tokens,
             filiais_isat:
             this.filiais_isat.get(),
           });
-          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
+           if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
           await this.containersService.execute({
             tokens: this.unique_tokens,
             nfiliais: filiais,
           });
-          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
+          if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
           await this.referencesService.execute({ tokens: this.unique_tokens });
-          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
-          await this.ordersService.execute({ tokens: this.tokens });
-          if (await this.checkUpdateSagi()) { this.loadSplashScreenAndQuitApp.quit(); }
+          if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
           await this.weighingsService.execute();
 
-          if (
+          /* if (
             versao.substr(0, 1).toUpperCase() === 'T' ||
             parseInt(split_versao[0], 10) > 9 ||
             (parseInt(split_versao[0], 10) == 9 && parseInt(split_versao[1], 10) > 6) ||
             (parseInt(split_versao[0], 10) == 9 && parseInt(split_versao[1], 10) == 6 && parseInt(split_versao[3], 10) >= 100834)
-          ) { // 9.6.0.100834
+          ) { // 9.6.0.100834 && [ '9', '6', '0', '100834' ]
+            if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
             await this.ticketsService.execute({ tokens: this.tokens });
+          } */
+
+          if ( // 1094 (orlandi), se serviço 3.0 habilitado, se existe a pl syg_crud_ordem_serv3 e filiais no isat = filiais no sagi (-1 pq no isat tem a filial TODAS)
+            (parseInt(nomegeral, 10) === 1094 || parseInt(nomegeral, 10) === 1000)
+              && hab_servicos_3
+              && existe_pl_syg_crud_ordem_serv3
+              && this.contarTokensUnicos(this.tokens) === 1
+              && Object.keys(this.filiais_isat.get()).length === 1
+              && (Object.values(this.filiais_isat.get())[0].filiais.length - 1) >= parseInt(filiais, 10)
+          ) {
+            const ms_ultima_vez_que_integrou = this.alreadyExecutedToday.get();
+
+            if (ms_ultima_vez_que_integrou === null || moment().diff(moment(ms_ultima_vez_que_integrou), 'days') >= 1) { // ainda não executou hoje
+              this.alreadyExecutedToday.set(moment());
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.categoriaDeFornecedoresService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei categor');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.sagiUnidadesService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei sagi_unidade');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.setoresService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei setores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.classificadoresService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei classificadores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.regiaoService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei regiao');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.funcionariosService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei cag_fun');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.controladoresService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei controladores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.checklistService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei checklist');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.sagiFormaPagtosService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei sagi_forma_pagto');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.centroDeContasService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei centro de contas');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.prazosService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei prazos');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.centroDeCustosService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei centro de custos');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.classeDeCredoresService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei classde de credores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.credoresService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei credores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.vendedoresService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei vendedores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.compradoresService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei compradores');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.usuariosService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei usuarios');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.categoriaDeProdutosService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei categoria de produtos');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.ncmService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei ncm');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.tipoDeProdutosService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei tipo de produtos');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.sagiListaOnuService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei sagi lista onu');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.produtosService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei produtos');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.produtos2Service.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei produtos2');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.tipoCaminhaoService.execute({ token: this.unique_tokens[0] });
+              console.log('Finalizei tipo caminhao');
+
+              if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+              await this.sagiCadAtivoService.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+              console.log('Finalizei ativos');
+            }
+
+            if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+            await this.contratosServ3Service.execute({ token: this.unique_tokens[0], filiais_isat: Object.values(this.filiais_isat.get())[0].filiais });
+            console.log('Finalizei contratos');
+
+            if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+            await this.ordersService.execute({ tokens: this.tokens, filiais_isat: this.filiais_isat.get(), token: this.unique_tokens[0] });
+          } else {
+            if (await this.checkUpdateSagi()) { this.quitApp.quit(); }
+            await this.ordersService.execute({ tokens: this.tokens, filiais_isat: this.filiais_isat.get() });
           }
         } else {
           this.writeLog(
@@ -111,10 +290,7 @@ class StartService {
       this.writeLog(
         `(${new Date().toLocaleString()}) - Erro serviço geral: ${err.message}`
       );
-    } /* finally {
-      clearTimeout(this.timeout);
-      this.timeout = setTimeout(() => this.start(), 60000);
-    } */
+    }
   }
 
   async verificaIntegracaoIsat() {
@@ -124,7 +300,7 @@ class StartService {
 
       if (idempresa && idempresa.replace(/\D/g) % 1 === 0) {
         const response = await api
-          .get(`/v2/bd9e6bc2c760d35bd8a70c818cece692/cliente/${idempresa}`)
+          .get(`/v2/bd9e6bc2c760d35bd8a70c818cece692/cliente/${idempresa}?filiais=${encodeURIComponent(JSON.stringify(this.generateBranches(filiais)))}`)
           .catch((err) =>
             this.writeLog(
               `(${new Date().toLocaleString()}) - Erro requisição Api Isat integração: ${
@@ -140,11 +316,10 @@ class StartService {
         if (response) {
           const registros = response.data;
 
-          const concat_retornos = [];
           const _filiais_isat = {};
 
           await Promise.all(
-            registros.map(async ({ filial, token, motoristas_x_veiculos_sagi }) => {
+            registros.map(async ({ filial, token, motoristas_x_veiculos_sagi, data_hora_encerrar_atividade_no_sagi, finaliza_coleta_envio_sagi, finaliza_embarque_todos_sagi, filiais: array_filiais_isat }) => {
               if (filial) {
                 await this.parametros.setToken({
                   filial,
@@ -152,12 +327,7 @@ class StartService {
                   nfiliais: filiais,
                 });
 
-                concat_retornos.push(`${filial}:${token}`);
-                _filiais_isat[filial] = { motoristas_x_veiculos_sagi, token };
-              } else {
-                concat_retornos.push(
-                  `Token sem filial definida no iSat:${token}`
-                );
+                _filiais_isat[filial] = { motoristas_x_veiculos_sagi, token, data_hora_encerrar_atividade_no_sagi, finaliza_coleta_envio_sagi, finaliza_embarque_todos_sagi, filiais: array_filiais_isat };
               }
             })
           );
@@ -165,7 +335,7 @@ class StartService {
           this.filiais_isat.set(_filiais_isat);
 
           this.writeLog(
-            `(${new Date().toLocaleString()}) - Filiais isat: (${JSON.stringify(this.filiais_isat.get())})`
+            `(${new Date().toLocaleString()}) - Filiais isat: (${JSON.stringify(this.filiais_isat.get(), null, 2)})`
           );
         }
       } else {
@@ -311,6 +481,24 @@ class StartService {
       log,
       type,
     });
+  }
+
+  generateBranches(nfiliais) {
+    let filiais = [];
+
+    for (let i = 0; i < nfiliais; i++) {
+      if (i === 0) {
+        filiais.push("MATRIZ");
+      } else {
+        filiais.push(`FILIAL${i}`);
+      }
+    }
+
+    return filiais;
+  }
+
+  contarTokensUnicos(array) {
+    return new Set(array.map(obj => obj.token)).size;
   }
 }
 

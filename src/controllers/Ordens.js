@@ -45,6 +45,14 @@ class Ordens {
     return this.ordens_model.setInitialDateTime(data);
   }
 
+  setCloseDateTime(data) {
+    return this.ordens_model.setCloseDateTime(data);
+  }
+
+  setFinishOrder(data) {
+    return this.ordens_model.setFinishOrder(data);
+  }
+
   retornoIsat(data) {
     return this.ordens_model.retornoIsat(data);
   }

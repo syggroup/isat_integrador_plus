@@ -23,12 +23,30 @@ class VeiculosModel {
 
   async notFindInIsatAndUpdate(data) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
-    const result = await this.db.query(`
-      UPDATE sagi_cad_ativo
-      SET ativo_rastreador='NENHUM'
-      WHERE trim(ativo_placa) not in('${data.join("','")}')
+
+    const result_ativos = await this.db.query(`
+      SELECT a.ativo_id
+      FROM sagi_cad_ativo a
+      WHERE trim(a.ativo_rastreador)<>'NENHUM'
+        AND trim(a.ativo_placa) not in('${data.join("','")}')
     `);
-    return result[1].rowCount;
+
+    const ativo_ids_update = [];
+    for (const ativo of result_ativos[1].rows) {
+      ativo_ids_update.push(ativo.ativo_id);
+    }
+
+    if (ativo_ids_update.length > 0) {
+      const result_update = await this.db.query(`
+        UPDATE sagi_cad_ativo
+        SET ativo_rastreador='NENHUM'
+        WHERE ativo_id in(${ativo_ids_update.join(",")})
+      `);
+
+      return result_update[1].rowCount;
+    } else {
+      return 0;
+    }
   }
 }
 

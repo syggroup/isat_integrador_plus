@@ -2,11 +2,11 @@
   "name": "integrador_isat3",
   "description": "Sistema para integração do Sagi com iSat",
   "author": "Sygecom Informática Ltda.",
-  "version": "1.5.7",
+  "version": "1.6.2",
   "main": "src/main.js",
   "license": "MIT",
   "scripts": {
-    "start": "electron . --host=localhost --port=5432 --user=postgres --password= --database=postgres",
+    "start": "electron . --host=localhost --port=5435 --user=postgres --password=253565 --database=sagi_orlandi",
     "pack": "electron-builder --dir",
     "pack-only": "electron-builder --prepackaged ./",
     "build": "electron-builder build --win --x64 --ia32 --publish never",

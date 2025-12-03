@@ -10,18 +10,18 @@ class OrdensModel {
 
     const result = await this.db.query(`
       SELECT a.sr_recno,
-        a.tipo as acao,
+        trim(a.tipo) as acao,
         a.numbol,
-        a.empresa as filial 
+        trim(a.empresa) as filial
       FROM isat_monitora a
       ORDER BY a.numbol DESC LIMIT 500
-    `);    
+    `);
 
     const excludes_im = result[1].rows.filter(r => !filiais.includes(r.filial)).map(r => r.sr_recno);
 
     if (excludes_im.length > 0) {
       await this.db.query(`DELETE FROM isat_monitora as a WHERE sr_recno in (${excludes_im.join(",")})`);
-      
+
       while(excludes_im.length > 0) {
         excludes_im.pop();
       }
@@ -52,8 +52,8 @@ class OrdensModel {
           FROM syg_movimento_pesos('${ticket.acao}',null,null,'${ticket.filial}',null,null,null,null,null,${ticket.numbol},null,null) a
           INNER JOIN sagi_cad_ativo b ON b.ativo_placa = a.placa
           INNER JOIN ordem c ON c.ordem = a.num_coleta and c.cli_for = '${ticket.acao === 'ENTRADA' ? 'COLETA' : 'EMBARQUE'}'
-          WHERE trim(a.placa) <> '' 
-            AND a.num_coleta > 0 
+          WHERE trim(a.placa) <> ''
+            AND a.num_coleta > 0
             AND b.ativo_rastreador = 'ISAT'
             AND (SELECT count(*) FROM sagi_isat_sinc d WHERE d.codigo = a.codigo AND d.tipo = '${ticket.acao === 'ENTRADA' ? 'FORNECEDOR' : 'CLIENTE'}' AND d.token = '${token}') > 0
           ORDER BY a.boleto, a.data
@@ -78,23 +78,23 @@ class OrdensModel {
 
   async deleteAllDeleteAfterInsert() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
-  
+
     return await Promise.all([
       await this.db.query(`
-        DELETE FROM isat_monitora 
+        DELETE FROM isat_monitora
         WHERE sr_recno IN (
-          SELECT sr_recno 
-          FROM isat_monitora 
+          SELECT sr_recno
+          FROM isat_monitora
           WHERE numbol IN (
             SELECT numbol FROM isat_monitora WHERE tipo = 'DELETE_C'
           ) AND tipo = 'ENTRADA'
         )
       `),
       await this.db.query(`
-        DELETE FROM isat_monitora 
+        DELETE FROM isat_monitora
         WHERE sr_recno IN (
-          SELECT sr_recno 
-          FROM isat_monitora 
+          SELECT sr_recno
+          FROM isat_monitora
           WHERE numbol IN (
             SELECT numbol FROM isat_monitora WHERE tipo = 'DELETE_V'
           ) AND tipo = 'SAIDA'
@@ -104,7 +104,7 @@ class OrdensModel {
         DELETE FROM isat_monitora WHERE numbol IN (
           SELECT z.numbol
           FROM isat_monitora as z
-          WHERE z.tipo = 'ENTRADA' 
+          WHERE z.tipo = 'ENTRADA'
             and (SELECT count(*) FROM cag_pap b WHERE b.numbol = z.numbol) = 0
         ) AND tipo = 'ENTRADA'
       `),
@@ -112,7 +112,7 @@ class OrdensModel {
         DELETE FROM isat_monitora WHERE numbol IN (
           SELECT z.numbol
           FROM isat_monitora as z
-          WHERE z.tipo = 'SAIDA' 
+          WHERE z.tipo = 'SAIDA'
             AND (SELECT count(*) FROM cag_rec b WHERE b.numbol = z.numbol) = 0
         ) AND tipo = 'SAIDA'
       `) */

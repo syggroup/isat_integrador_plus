@@ -21,11 +21,11 @@ class ForEndeModel {
         e.codfor as codigo,
         e.num_col,
         trim(e.status) as status,
-        regexp_replace(ltrim(trim(b.fone), '0'), '\D', '', 'g') as tel1,
-        regexp_replace(ltrim(trim(b.tel2), '0'), '\D', '', 'g') as tel2,
+        regexp_replace(ltrim(trim(b.fone), '0'), '\\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(b.tel2), '0'), '\\D', '', 'g') as tel2,
         e.sr_recno,
         trim(b.tip) as tp,
-        case when trim(b.tip) = 'F' then regexp_replace(trim(b.cpf), '\D', '', 'g') else regexp_replace(trim(b.cgc), '\D', '', 'g') end as cpf_cnpj
+        case when trim(b.tip) = 'F' then regexp_replace(trim(b.cpf), '\\D', '', 'g') else regexp_replace(trim(b.cgc), '\\D', '', 'g') end as cpf_cnpj
       FROM for_ende e
       LEFT JOIN cag_for b ON e.codfor = b.codfor
       WHERE e.sr_recno not in (select b.codigo from sagi_isat_sinc b where b.tipo='FORNECEDOR-ENDE' and b.token = '${token}')
@@ -52,11 +52,11 @@ class ForEndeModel {
         e.codfor as codigo,
         e.num_col,
         trim(e.status) as status,
-        regexp_replace(ltrim(trim(b.fone), '0'), '\D', '', 'g') as tel1,
-        regexp_replace(ltrim(trim(b.tel2), '0'), '\D', '', 'g') as tel2,
+        regexp_replace(ltrim(trim(b.fone), '0'), '\\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(b.tel2), '0'), '\\D', '', 'g') as tel2,
         e.sr_recno,
         trim(b.tip) as tp,
-        case when trim(b.tip) = 'F' then regexp_replace(trim(b.cpf), '\D', '', 'g') else regexp_replace(trim(b.cgc), '\D', '', 'g') end as cpf_cnpj
+        case when trim(b.tip) = 'F' then regexp_replace(trim(b.cpf), '\\D', '', 'g') else regexp_replace(trim(b.cgc), '\\D', '', 'g') end as cpf_cnpj
       FROM for_ende e
       LEFT JOIN cag_for b ON e.codfor = b.codfor
       WHERE e.codfor = ${codigo} and e.num_col = ${num_col}

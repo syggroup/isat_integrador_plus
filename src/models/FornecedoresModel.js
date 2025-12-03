@@ -22,10 +22,10 @@ class FornecedoresModel {
         a.codfor as codigo,
         0 as num_col,
         trim(a.status) as status,
-        regexp_replace(ltrim(trim(a.fone), '0'), '\D', '', 'g') as tel1,
-        regexp_replace(ltrim(trim(a.tel2), '0'), '\D', '', 'g') as tel2,
+        regexp_replace(ltrim(trim(a.fone), '0'), '\\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(a.tel2), '0'), '\\D', '', 'g') as tel2,
         trim(a.tip) as tp,
-        case when trim(a.tip) = 'F' then regexp_replace(trim(a.cpf), '\D', '', 'g') else regexp_replace(trim(a.cgc), '\D', '', 'g') end as cpf_cnpj
+        case when trim(a.tip) = 'F' then regexp_replace(trim(a.cpf), '\\D', '', 'g') else regexp_replace(trim(a.cgc), '\\D', '', 'g') end as cpf_cnpj
       FROM cag_for a
       WHERE a.codfor not in (select b.codigo from sagi_isat_sinc b where b.tipo='FORNECEDOR' and b.token = '${token}')
       ORDER BY a.codfor
@@ -52,10 +52,10 @@ class FornecedoresModel {
         a.codfor as codigo,
         0 as num_col,
         trim(a.status) as status,
-        regexp_replace(ltrim(trim(a.fone), '0'), '\D', '', 'g') as tel1,
-        regexp_replace(ltrim(trim(a.tel2), '0'), '\D', '', 'g') as tel2,
+        regexp_replace(ltrim(trim(a.fone), '0'), '\\D', '', 'g') as tel1,
+        regexp_replace(ltrim(trim(a.tel2), '0'), '\\D', '', 'g') as tel2,
         trim(a.tip) as tp,
-        case when trim(a.tip) = 'F' then regexp_replace(trim(a.cpf), '\D', '', 'g') else regexp_replace(trim(a.cgc), '\D', '', 'g') end as cpf_cnpj
+        case when trim(a.tip) = 'F' then regexp_replace(trim(a.cpf), '\\D', '', 'g') else regexp_replace(trim(a.cgc), '\\D', '', 'g') end as cpf_cnpj
       FROM cag_for a
       WHERE a.codfor = ${codigo}
     `);

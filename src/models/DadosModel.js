@@ -6,7 +6,29 @@ class DadosModel {
   async get() {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
     const result = await this.db.query(
-      "SELECT trim(gps_aberto) as gps_aberto, filiais, nomegeral, coalesce(trim(versao), '0.0.0.0') as versao FROM dados"
+      `
+        SELECT trim(gps_aberto) as gps_aberto,
+          filiais,
+          nomegeral,
+          coalesce(trim(versao), '0.0.0.0') as versao,
+          (
+            SELECT EXISTS (
+              SELECT 1
+              FROM sagi_parametros
+              WHERE parametro_parametro = 'HAB_SERVICOS_3_0'
+                AND coalesce(parametro_valor, '.F.') = '.T.'
+            )
+          ) as hab_servicos_3,
+          (
+            SELECT EXISTS (
+              SELECT 1
+              FROM pg_proc p
+              JOIN pg_namespace n ON n.oid = p.pronamespace
+              WHERE p.proname = 'syg_crud_ordem_serv3'
+            )
+          ) as existe_pl_syg_crud_ordem_serv3
+        FROM dados
+      `
     );
     return result[1].rows;
   }
