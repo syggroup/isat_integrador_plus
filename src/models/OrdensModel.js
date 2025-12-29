@@ -136,7 +136,14 @@ class OrdensModel {
             trim(b.tipo_ret) as tipo_retorno,
             case when b.servico then 'SERVICO' when b.cli_for='COLETA' then 'COLETA' else 'EMBARQUE' end as tipo_ordem,
             trim(b.cacamba) as tipo_cacamba,
-            coalesce(b.servico, false) as coleta_servico
+            coalesce(b.servico, false) as coleta_servico,
+            case when trim(b.tipofre) <> '' then trim(b.tipofre) else 'EMPRESA' end as tipofre,
+            coalesce(case
+              when b.servico or b.cli_for='COLETA'
+                then (select cag_ide.codcom||' - '||cag_ide.comprador from cag_ide where cag_ide.codcom=b.codfor limit 1)
+              else
+                then (select cag_vnd.codvnd||' - '||cag_vnd.vendedor from cag_vnd where cag_vnd.codvnd=b.codfor limit 1)
+            end, '') as comprador_vendedor
           FROM isat_ordem_temp a
           LEFT JOIN ordem b on a.ordem=b.ordem
           LEFT JOIN mot as c on c.codmot=b.codmot
@@ -168,11 +175,13 @@ class OrdensModel {
             '' as tipo_retorno,
             '' as tipo_ordem,
             '' as tipo_cacamba,
-            false as coleta_servico
+            false as coleta_servico,
+            '' as tipofre,
+            '' as comprador_vendedor
           FROM isat_ordem_temp a
           WHERE a.ordem>0 AND a.acao='DELETE'
         ) z
-        GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+        GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
         ORDER BY 1 ASC
         LIMIT ${limit}
     `);
@@ -507,21 +516,10 @@ class OrdensModel {
   async setInitialDateTime({ ordem, date, time }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
-    const result_ordem = await this.db.query(`
-      SELECT datasai, horaapa FROM ordem WHERE ordem=${ordem}
-    `);
-
-    if (result_ordem[1].rowCount > 0) {
-      if (
-        result_ordem[1].rows[0].datasai !== date ||
-        result_ordem[1].rows[0].horaapa !== time
-      ) {
-        const result = await this.db.query(
-          `UPDATE ordem SET datasai='${date}', horaapa='${time}' WHERE ordem=${ordem}`
-        );
-        return result[1].rowCount;
-      }
-    }
+    await Promise.all([
+      await this.db.query(`UPDATE ordem SET obs = 'EM ANDAMENTO' WHERE ordem = ${ordem} AND status <> 'F' AND trim(obs) <> 'EM ANDAMENTO'`),
+      await this.db.query(`UPDATE ordem SET datasai='${date}', horaapa='${time}' WHERE ordem=${ordem} and (datasai <> '${date}' or horaapa <> '${time}')`)
+    ]);
 
     return 0;
   }
@@ -529,23 +527,11 @@ class OrdensModel {
   async setCloseDateTime({ ordem, date, time }) {
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
-    const result_ordem = await this.db.query(`
-      SELECT datache, horache FROM ordem WHERE ordem=${ordem}
-    `);
+    const result = await this.db.query(
+      `UPDATE ordem SET datache='${date}', horache='${time}' WHERE ordem=${ordem} and (datache <> '${date}' or horache <> '${time}')`
+    );
 
-    if (result_ordem[1].rowCount > 0) {
-      if (
-        result_ordem[1].rows[0].datache !== date ||
-        result_ordem[1].rows[0].horache !== time
-      ) {
-        const result = await this.db.query(
-          `UPDATE ordem SET datache='${date}', horache='${time}' WHERE ordem=${ordem}`
-        );
-        return result[1].rowCount;
-      }
-    }
-
-    return 0;
+    return result[1].rowCount;
   }
 
   async setFinishOrder({ ordem }) {
@@ -559,26 +545,6 @@ class OrdensModel {
   }
 
   async retornoIsat({ ordem, situacao /*, movimenta_cacamba */ }) {
-    /* await this.db.query("SET client_encoding TO 'UTF-8'");
-
-    const result_ordem = await this.db.query(`
-      SELECT retorno_isat, trim(cli_for) as tipo FROM ordem WHERE ordem=${ordem}
-    `);
-
-    if (result_ordem[1].rowCount > 0) {
-      if (result_ordem[1].rows[0].retorno_isat !== situacao) {
-        await this.db.query(
-          `UPDATE ordem SET retorno_isat='${situacao}' WHERE ordem=${ordem}`
-        );
-
-        // if (movimenta_cacamba && result_ordem[1].rows[0].tipo === 'EMBARQUE' && situacao.trim() === 'ENCERRADA NO DRIVERSAT') {
-        //  await this.db.query(
-        //    `UPDATE ordem SET status='F', obs='FINALIZADO' WHERE ordem=${ordem}`
-        //  );
-        // }
-      }
-    } */
-
     await this.db.query("SET client_encoding TO 'SQL_ASCII'");
 
     await this.db.query(

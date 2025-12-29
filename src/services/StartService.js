@@ -146,8 +146,12 @@ class StartService {
             await this.ticketsService.execute({ tokens: this.tokens });
           } */
 
-          if ( // 1094 (orlandi), se serviço 3.0 habilitado, se existe a pl syg_crud_ordem_serv3 e filiais no isat = filiais no sagi (-1 pq no isat tem a filial TODAS)
-            (parseInt(nomegeral, 10) === 1094 || parseInt(nomegeral, 10) === 1000)
+          if ( // se serviço 3.0 habilitado, se existe a pl syg_crud_ordem_serv3 e filiais no isat = filiais no sagi (-1 pq no isat tem a filial TODAS)
+            [
+              1094, // ORLANDI
+              1000, // COMERCIAL
+              804   // REPET
+            ].includes(parseInt(nomegeral, 10))
               && hab_servicos_3
               && existe_pl_syg_crud_ordem_serv3
               && this.contarTokensUnicos(this.tokens) === 1

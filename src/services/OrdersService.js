@@ -186,6 +186,8 @@ class OrdersService {
               tipo_retorno: reg.tipo_retorno.trim() != 'WEB' ? reg.tipo_retorno : 'TROCA',
               tipo_ordem: reg.tipo_ordem,
               tipo_cacamba: reg.tipo_cacamba,
+              tipofre: reg.tipofre,
+              comprador_vendedor: reg.comprador_vendedor ? reg.comprador_vendedor.replace(/['"]/g, '') : '',
               sagi_col_servico: ordens_com_servico && reg.coleta_servico ? reg.sagi_col_servico.map((sagi_col_servico) => {
                 return {
                   servico_id: parseInt(sagi_col_servico.servico_id, 10),
