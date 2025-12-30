@@ -142,7 +142,7 @@ class OrdensModel {
               when b.servico or b.cli_for='COLETA'
                 then (select cag_ide.codcom||' - '||cag_ide.comprador from cag_ide where cag_ide.codcom=b.codfor limit 1)
               else
-                then (select cag_vnd.codvnd||' - '||cag_vnd.vendedor from cag_vnd where cag_vnd.codvnd=b.codfor limit 1)
+                (select cag_vnd.codvnd||' - '||cag_vnd.vendedor from cag_vnd where cag_vnd.codvnd=b.codfor limit 1)
             end, '') as comprador_vendedor
           FROM isat_ordem_temp a
           LEFT JOIN ordem b on a.ordem=b.ordem
