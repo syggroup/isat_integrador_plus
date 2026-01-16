@@ -149,6 +149,7 @@ class OrdensModel {
           LEFT JOIN mot as c on c.codmot=b.codmot
           LEFT JOIN sagi_cad_ativo as d on d.ativo_placa=b.placa
           WHERE a.ordem>0
+            and b.sequencia > 0
             and a.acao<>'DELETE'
             ${!ordens_com_servico ? `and (b.empresa='${filial}' or b.empresa='TODAS')` : ''}
             ${
